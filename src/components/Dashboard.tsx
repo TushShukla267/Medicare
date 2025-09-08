@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Activity, Heart, Thermometer, Droplets, Shield, Users, Calendar, TrendingUp, User 
+  Activity, Heart, Thermometer, Droplets, Shield, Users, Calendar, TrendingUp, User, Moon, Repeat 
 } from 'lucide-react';
 import { UserRole } from '../App';
 import { VitalCard, VitalCardProps } from './VitalCard';
@@ -12,12 +12,12 @@ interface DashboardProps {
 }
 
 export function Dashboard({ userRole }: DashboardProps) {
-  // -------------------- Patient Vitals --------------------
+  // -------------------- Patient Vitals (Updated) --------------------
   const patientVitals = [
-    { label: 'Heart Rate', value: '72', unit: 'BPM', icon: Heart, status: 'normal', trend: '+2%' },
-    { label: 'Blood Pressure', value: '120/80', unit: 'mmHg', icon: Activity, status: 'normal', trend: '-1%' },
-    { label: 'Temperature', value: '98.6', unit: '°F', icon: Thermometer, status: 'normal', trend: '0%' },
-    { label: 'Oxygen Saturation', value: '98', unit: '%', icon: Droplets, status: 'normal', trend: '+1%' }
+    { label: 'Hydration Level', value: '75', unit: '%', icon: Droplets, status: 'normal', trend: '+3%' },
+    { label: 'Sleep Quality Score', value: '85', unit: '/100', icon: Moon, status: 'normal', trend: '+2%' },
+    { label: 'Activity Level', value: '6.5K', unit: 'steps', icon: Activity, status: 'normal', trend: '+5%' },
+    { label: 'Stress Index (HRV)', value: '60', unit: 'ms', icon: Repeat, status: 'normal', trend: '-1%' }
   ] as const;
 
   // -------------------- Admin Vitals --------------------
@@ -63,7 +63,6 @@ export function Dashboard({ userRole }: DashboardProps) {
 
   // -------------------- Patient List for Doctors --------------------
   const patients = ['John Doe', 'Sarah Wilson', 'Michael Brown'];
-
   return (
     <div className="space-y-6">
       {/* Admin Dashboard Section */}
@@ -73,6 +72,7 @@ export function Dashboard({ userRole }: DashboardProps) {
             <h1 className="text-3xl font-bold">Admin Dashboard</h1>
             <p className="text-gray-600">Manage system users, performance, and reports</p>
           </header>
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {adminStatusCards.map((card, i) => (
@@ -115,7 +115,6 @@ export function Dashboard({ userRole }: DashboardProps) {
           </div>
         </div>
       )}
-
 
       {/* Patients/Doctors/Guardians Dashboards */}
       {(userRole === 'doctor' || userRole === 'patient' || userRole === 'guardian') && (
@@ -214,35 +213,6 @@ export function Dashboard({ userRole }: DashboardProps) {
               {(userRole === 'doctor' || userRole === 'patient') && (
                 <RecentActivity userRole={userRole} />
               )}
-
-              {/* Quick Actions */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                <div className="space-y-3">
-                  {userRole === 'doctor' && (
-                    <>
-                      <button className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg">Start Consultation</button>
-                      <button className="w-full bg-green-600 text-white px-4 py-3 rounded-lg">Review Alerts</button>
-                    </>
-                  )}
-
-                  {userRole === 'patient' && (
-                    <>
-                      <button className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg">Contact Doctor</button>
-                      <button className="w-full bg-green-600 text-white px-4 py-3 rounded-lg">Health Report</button>
-                    </>
-                  )}
-
-                  {userRole === 'guardian' && (
-                    <>
-                      <button className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg">View Patient Reports</button>
-                      <button className="w-full bg-green-600 text-white px-4 py-3 rounded-lg">Contact Healthcare Provider</button>
-                    </>
-                  )}
-
-                  <button className="w-full bg-purple-600 text-white px-4 py-3 rounded-lg">Settings & Preferences</button>
-                </div>
-              </div>
             </div>
           </div>
         </>
