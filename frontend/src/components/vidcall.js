@@ -1,4 +1,3 @@
-// telemedicine-backend.js
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
@@ -8,7 +7,7 @@ const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
     origin: "*",
-    methods: ["GET", "POST"]
+    methods: ["GET", "POST"]  
   }
 });
 
