@@ -1,6 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 type MultiRoleLoginFormProps = {
   onLoginSuccess: () => void;
@@ -8,13 +7,57 @@ type MultiRoleLoginFormProps = {
 
 export default function MultiRoleLoginForm({ onLoginSuccess }: MultiRoleLoginFormProps) {
   const [role, setRole] = useState("patient");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  // These states handle the custom identifier fields for other roles
+  const [doctorIdentifier, setDoctorIdentifier] = useState(""); // license/email
+  const [adminIdentifier, setAdminIdentifier] = useState("");   // empID/email
+  const [guardianIdentifier, setGuardianIdentifier] = useState(""); // patientEmail/phone
+  const [error, setError] = useState<string | null>(null);
+
   const navigate = useNavigate();
 
-const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault();  // TODO: call API and validate login
-  onLoginSuccess(); // notify parent after successful login
-  navigate("/home");
-};
+  // Dynamic input for each role
+  const getRoleInputValue = () => {
+    if (role === "patient") return email;
+    if (role === "doctor") return doctorIdentifier;
+    if (role === "admin") return adminIdentifier;
+    if (role === "guardian") return guardianIdentifier;
+    return email;
+  };
+  const setRoleInputValue = (val: string) => {
+    if (role === "patient") setEmail(val);
+    else if (role === "doctor") setDoctorIdentifier(val);
+    else if (role === "admin") setAdminIdentifier(val);
+    else if (role === "guardian") setGuardianIdentifier(val);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    let identifierValue = getRoleInputValue();
+
+    // Since backend expects email, for roles using employeeId/license/patient phone,
+    // Frontend must require users to login with registered email or map identifier to email before sending.
+    // For now, send the identifier as "email" for API compatibility:
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: identifierValue, password })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setError(data.error || "Login failed");
+        return;
+      }
+      localStorage.setItem("token", data.token);
+      setError(null);
+      onLoginSuccess();
+      navigate("/home");
+    } catch (err) {
+      setError("Network or server error");
+    }
+  };
 
   return (
     <div
@@ -52,11 +95,12 @@ const handleSubmit = (e: React.FormEvent) => {
           ))}
         </div>
 
-        {/* Conditionally show login fields for selected role */}
+        {/* Login Forms per role */}
         {role === "patient" && (
           <form
-          onSubmit={handleSubmit} 
-          className="space-y-8 max-h-[60vh] overflow-auto pr-4">
+            onSubmit={handleSubmit}
+            className="space-y-8 max-h-[60vh] overflow-auto pr-4"
+          >
             <div>
               <label className="block text-gray-700 mb-2 font-semibold">
                 Email Address <span className="text-red-500">*</span>
@@ -65,6 +109,8 @@ const handleSubmit = (e: React.FormEvent) => {
                 type="text"
                 placeholder="Enter email"
                 required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:border-indigo-600 transition text-lg"
               />
             </div>
@@ -76,12 +122,15 @@ const handleSubmit = (e: React.FormEvent) => {
                 type="password"
                 placeholder="Enter your password"
                 required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:border-indigo-600 transition duration-300 text-lg"
               />
             </div>
             <p className="text-gray-600 text-sm italic">
               Use your registered email to login as a patient.
             </p>
+            {error && <div className="text-red-600 text-sm">{error}</div>}
             <div className="mt-8 text-center">
               <button
                 type="submit"
@@ -91,21 +140,22 @@ const handleSubmit = (e: React.FormEvent) => {
               </button>
               <p className="mt-4 text-lg text-gray-700">
                 Don't have an account?{" "}
-                <a
-                  href="/register"
+                <Link
+                  to="/register"
                   className="text-indigo-600 font-semibold hover:underline"
                 >
                   Register here
-                </a>
+                </Link>
               </p>
             </div>
           </form>
         )}
 
         {role === "doctor" && (
-          <form 
-          onSubmit={handleSubmit}
-          className="space-y-8 max-h-[60vh] overflow-auto pr-4">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-8 max-h-[60vh] overflow-auto pr-4"
+          >
             <div>
               <label className="block text-gray-700 mb-2 font-semibold">
                 Medical License or Email <span className="text-red-500">*</span>
@@ -114,6 +164,8 @@ const handleSubmit = (e: React.FormEvent) => {
                 type="text"
                 placeholder="Enter medical license number or email"
                 required
+                value={doctorIdentifier}
+                onChange={e => setDoctorIdentifier(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:border-indigo-600 transition text-lg"
               />
             </div>
@@ -125,12 +177,15 @@ const handleSubmit = (e: React.FormEvent) => {
                 type="password"
                 placeholder="Enter your password"
                 required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:border-indigo-600 transition duration-300 text-lg"
               />
             </div>
             <p className="text-gray-600 text-sm italic">
               You can login using your medical license number or email.
             </p>
+            {error && <div className="text-red-600 text-sm">{error}</div>}
             <div className="mt-8 text-center">
               <button
                 type="submit"
@@ -140,21 +195,22 @@ const handleSubmit = (e: React.FormEvent) => {
               </button>
               <p className="mt-4 text-lg text-gray-700">
                 Don't have an account?{" "}
-                <a
-                  href="/register"
+                <Link
+                  to="/register"
                   className="text-indigo-600 font-semibold hover:underline"
                 >
                   Register here
-                </a>
+                </Link>
               </p>
             </div>
           </form>
         )}
 
         {role === "admin" && (
-          <form 
-          onSubmit={handleSubmit}
-          className="space-y-8 max-h-[60vh] overflow-auto pr-4">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-8 max-h-[60vh] overflow-auto pr-4"
+          >
             <div>
               <label className="block text-gray-700 mb-2 font-semibold">
                 Employee ID or Email <span className="text-red-500">*</span>
@@ -163,6 +219,8 @@ const handleSubmit = (e: React.FormEvent) => {
                 type="text"
                 placeholder="Enter employee ID or email"
                 required
+                value={adminIdentifier}
+                onChange={e => setAdminIdentifier(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:border-indigo-600 transition text-lg"
               />
             </div>
@@ -174,12 +232,15 @@ const handleSubmit = (e: React.FormEvent) => {
                 type="password"
                 placeholder="Enter your password"
                 required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:border-indigo-600 transition duration-300 text-lg"
               />
             </div>
             <p className="text-gray-600 text-sm italic">
               Use your employee ID or email to access admin features.
             </p>
+            {error && <div className="text-red-600 text-sm">{error}</div>}
             <div className="mt-8 text-center">
               <button
                 type="submit"
@@ -189,21 +250,22 @@ const handleSubmit = (e: React.FormEvent) => {
               </button>
               <p className="mt-4 text-lg text-gray-700">
                 Don't have an account?{" "}
-                <a
-                  href="/register"
+                <Link
+                  to="/register"
                   className="text-indigo-600 font-semibold hover:underline"
                 >
                   Register here
-                </a>
+                </Link>
               </p>
             </div>
           </form>
         )}
 
         {role === "guardian" && (
-          <form 
-          onSubmit={handleSubmit}
-          className="space-y-8 max-h-[60vh] overflow-auto pr-4">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-8 max-h-[60vh] overflow-auto pr-4"
+          >
             <div>
               <label className="block text-gray-700 mb-2 font-semibold">
                 Patient Email or Phone <span className="text-red-500">*</span>
@@ -212,6 +274,8 @@ const handleSubmit = (e: React.FormEvent) => {
                 type="text"
                 placeholder="Enter associated patient email or phone"
                 required
+                value={guardianIdentifier}
+                onChange={e => setGuardianIdentifier(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:border-indigo-600 transition text-lg"
               />
             </div>
@@ -223,12 +287,15 @@ const handleSubmit = (e: React.FormEvent) => {
                 type="password"
                 placeholder="Enter your password"
                 required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:border-indigo-600 transition duration-300 text-lg"
               />
             </div>
             <p className="text-gray-600 text-sm italic">
               Login with your associated patient’s email or phone number.
             </p>
+            {error && <div className="text-red-600 text-sm">{error}</div>}
             <div className="mt-8 text-center">
               <button
                 type="submit"
@@ -236,7 +303,6 @@ const handleSubmit = (e: React.FormEvent) => {
               >
                 Login
               </button>
-
               <p className="mt-4 text-lg text-gray-700">
                 Don’t have an account?{" "}
                 <Link to="/register" className="text-indigo-600 font-semibold hover:underline">
