@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
+type UserRole = "patient" | "doctor" | "admin" | "guardian";
+
 type MultiRoleRegistrationFormProps = {
   onRegisterSuccess: () => void;
 };
 
 export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRoleRegistrationFormProps) {
-  const [role, setRole] = useState("patient");
+  const [role, setRole] = useState<UserRole>("patient");
 
   // Common fields
   const [fullName, setFullName] = useState("");
@@ -48,17 +50,14 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Client-side password confirmation check
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
 
-    // Split full name
     const [first_name, ...rest] = fullName.trim().split(" ");
     const last_name = rest.join(" ");
 
-    // Prepare base payload
     const payload: any = {
       role,
       email,
@@ -68,7 +67,6 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
       phone,
     };
 
-    // Add role-specific fields
     if (role === "patient") {
       payload.date_of_birth = dob;
       payload.gender = gender;
@@ -100,12 +98,13 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
       const data = await response.json();
+
       if (!response.ok) {
         setError(data.error || "Registration failed");
         return;
       }
+
       setError(null);
       onRegisterSuccess();
       navigate("/login");
@@ -113,9 +112,6 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
       setError("Network or server error");
     }
   };
-
-  // ... Render code remains unchanged (form fields & markup as you provided) ...
-  // (You can keep your full JSX as-is here)
 
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-gradient-to-tr from-blue-50 via-white to-indigo-50 overflow-auto p-8" style={{ fontFamily: "'Poppins', sans-serif" }}>
@@ -138,17 +134,15 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
             <button
               key={r}
               type="button"
-              className={`px-6 py-2 rounded-xl font-bold text-lg border ${
-                role === r
-                  ? "bg-indigo-600 text-white border-indigo-700"
-                  : "bg-gray-100 text-indigo-600 border-gray-300"
-              } transition hover:bg-indigo-400 hover:text-white`}
-              onClick={() => setRole(r)}
+              className={`px-6 py-2 rounded-xl font-bold text-lg border ${role === r ? "bg-indigo-600 text-white border-indigo-700" : "bg-gray-100 text-indigo-600 border-gray-300"
+                } transition hover:bg-indigo-400 hover:text-white`}
+              onClick={() => setRole(r as UserRole)}
             >
               {r.charAt(0).toUpperCase() + r.slice(1)}
             </button>
           ))}
         </div>
+
 
         <form onSubmit={handleSubmit} className="space-y-8 max-h-[80vh] overflow-auto pr-4">
           {/* Common Fields */}
@@ -379,6 +373,9 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
 
           {role === "doctor" && (
             <>
+              {/* Doctor fields */}
+              {/* ...similar to current fields */}
+              {/* Medical License Number, Specialty, Experience, Hospital */}
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="block text-gray-700 mb-2 font-semibold">
@@ -441,6 +438,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
 
           {role === "admin" && (
             <>
+              {/* Admin fields */}
               <div className="grid grid-cols-2 gap-6">
                 <div>
                   <label className="block text-gray-700 mb-2 font-semibold">
@@ -531,7 +529,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
               Register
             </button>
             <p className="mt-4 text-lg text-gray-700">
-              Already have an acc?{" "}
+              Already have an account?{" "}
               <Link to="/login" className="text-indigo-600 font-semibold hover:underline">
                 Login here
               </Link>

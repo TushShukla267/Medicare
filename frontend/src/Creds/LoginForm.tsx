@@ -1,19 +1,21 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
+
 type MultiRoleLoginFormProps = {
   onLoginSuccess: () => void;
 };
+
 
 export default function MultiRoleLoginForm({ onLoginSuccess }: MultiRoleLoginFormProps) {
   const [role, setRole] = useState("patient");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // These states handle the custom identifier fields for other roles
   const [doctorIdentifier, setDoctorIdentifier] = useState(""); // license/email
   const [adminIdentifier, setAdminIdentifier] = useState("");   // empID/email
   const [guardianIdentifier, setGuardianIdentifier] = useState(""); // patientEmail/phone
   const [error, setError] = useState<string | null>(null);
+
 
   const navigate = useNavigate();
 
@@ -32,13 +34,11 @@ export default function MultiRoleLoginForm({ onLoginSuccess }: MultiRoleLoginFor
     else if (role === "guardian") setGuardianIdentifier(val);
   };
 
+  // --- LOGIN HANDLER WITH ROLE-BASED REDIRECT ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     let identifierValue = getRoleInputValue();
 
-    // Since backend expects email, for roles using employeeId/license/patient phone,
-    // Frontend must require users to login with registered email or map identifier to email before sending.
-    // For now, send the identifier as "email" for API compatibility:
     try {
       const response = await fetch("http://localhost:5000/api/auth/login", {
         method: "POST",
@@ -50,10 +50,20 @@ export default function MultiRoleLoginForm({ onLoginSuccess }: MultiRoleLoginFor
         setError(data.error || "Login failed");
         return;
       }
+      // Save token and role returned by backend
       localStorage.setItem("token", data.token);
+      localStorage.setItem("role", data.role);
+
       setError(null);
       onLoginSuccess();
-      navigate("/home");
+
+      // --- Role-based dashboard redirection ---
+      let redirectPath = "/home";
+      if (data.role === "patient") redirectPath = "/patient-dashboard";
+      else if (data.role === "doctor") redirectPath = "/doctor-dashboard";
+      else if (data.role === "admin") redirectPath = "/admin-dashboard";
+      else if (data.role === "guardian") redirectPath = "/guardian-dashboard";
+      navigate(redirectPath);
     } catch (err) {
       setError("Network or server error");
     }
@@ -85,8 +95,8 @@ export default function MultiRoleLoginForm({ onLoginSuccess }: MultiRoleLoginFor
             <button
               key={r}
               type="button"
-              className={`px-6 py-2 rounded-xl font-bold text-lg border 
-                ${role === r ? "bg-indigo-600 text-white border-indigo-700" : "bg-gray-100 text-indigo-600 border-gray-300"} 
+              className={`px-6 py-2 rounded-xl font-bold text-lg border
+                ${role === r ? "bg-indigo-600 text-white border-indigo-700" : "bg-gray-100 text-indigo-600 border-gray-300"}
                 transition hover:bg-indigo-400 hover:text-white`}
               onClick={() => setRole(r)}
             >

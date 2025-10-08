@@ -1,6 +1,6 @@
 import React from 'react';
-import { 
-  Activity, Heart, Thermometer, Droplets, Shield, Users, Calendar, TrendingUp, User, Moon, Repeat 
+import {
+  Activity, Heart, Droplets, Shield, Users, Calendar, TrendingUp, User, Moon, Repeat
 } from 'lucide-react';
 import { UserRole } from '../App';
 import { VitalCard, VitalCardProps } from './VitalCard';
@@ -12,7 +12,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ userRole }: DashboardProps) {
-  // -------------------- Patient Vitals (Updated) --------------------
+  // Patient Vitals
   const patientVitals = [
     { label: 'Hydration Level', value: '75', unit: '%', icon: Droplets, status: 'normal', trend: '+3%' },
     { label: 'Sleep Quality Score', value: '85', unit: '/100', icon: Moon, status: 'normal', trend: '+2%' },
@@ -20,19 +20,19 @@ export function Dashboard({ userRole }: DashboardProps) {
     { label: 'Stress Index (HRV)', value: '60', unit: 'ms', icon: Repeat, status: 'normal', trend: '-1%' }
   ] as const;
 
-  // -------------------- Admin Vitals --------------------
+  // Admin Vitals
   const adminVitals = [
     { label: 'Avg. Health Score', value: '88', unit: '/100', icon: TrendingUp, status: 'normal', trend: '+3%' },
     { label: 'Total Appointments', value: '12.5K', unit: '', icon: Calendar, status: 'normal', trend: '+8%' }
   ] as const;
 
-  // -------------------- Guardian Vitals --------------------
+  // Guardian Vitals
   const guardianVitals = [
     { label: 'Average Heart Rate', value: '70', unit: 'BPM', icon: Heart, status: 'normal', trend: '+1%' },
     { label: 'Average Activity', value: '5.8K', unit: 'steps', icon: Activity, status: 'normal', trend: '+4%' }
   ] as const;
 
-  // -------------------- Status Cards --------------------
+  // Status Cards
   const doctorStatusCards = [
     { label: 'Active Patients', value: '127', icon: Users, color: 'blue' },
     { label: 'Critical Alerts', value: '3', icon: Shield, color: 'red' },
@@ -61,8 +61,9 @@ export function Dashboard({ userRole }: DashboardProps) {
     { label: 'System Notifications', value: '4', icon: TrendingUp, color: 'purple' }
   ] as const;
 
-  // -------------------- Patient List for Doctors --------------------
+  // Patient List for Doctors
   const patients = ['John Doe', 'Sarah Wilson', 'Michael Brown'];
+
   return (
     <div className="space-y-6">
       {/* Admin Dashboard Section */}
@@ -72,7 +73,6 @@ export function Dashboard({ userRole }: DashboardProps) {
             <h1 className="text-3xl font-bold">Admin Dashboard</h1>
             <p className="text-gray-600">Manage system users, performance, and reports</p>
           </header>
-
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {adminStatusCards.map((card, i) => (
@@ -88,14 +88,14 @@ export function Dashboard({ userRole }: DashboardProps) {
         </div>
       )}
 
-      {/* General Dashboard Section */}
+      {/* Guardian Dashboard Section */}
       {userRole === 'guardian' && (
         <div className="space-y-6">
           <header>
             <h1 className="text-3xl font-bold">General Health Overview</h1>
             <p className="text-gray-600">Explore how the system works and track sample data</p>
           </header>
-      
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
               { label: 'Platform Users', value: '2.3K+', icon: Users, color: 'blue' as const },
@@ -104,7 +104,7 @@ export function Dashboard({ userRole }: DashboardProps) {
               <StatusCard key={i} {...card} />
             ))}
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
               { label: 'Avg Heart Rate', value: '75', unit: 'BPM', icon: Heart, status: 'normal' as const, trend: '+1%' },
@@ -130,7 +130,7 @@ export function Dashboard({ userRole }: DashboardProps) {
               <p className="text-gray-600 mt-1">
                 {userRole === 'doctor' && 'Monitor your patients and manage care remotely'}
                 {userRole === 'patient' && 'Real-time monitoring of your health vitals and activity'}
-                {userRole === 'guardian' && 'View and monitor your loved ones\' health status'}
+                {userRole === 'guardian' && "View and monitor your loved ones' health status"}
               </p>
             </div>
             <div className="flex items-center space-x-2">
