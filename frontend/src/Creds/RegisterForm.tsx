@@ -115,42 +115,36 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
 
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-gradient-to-tr from-blue-50 via-white to-indigo-50 overflow-auto p-8" style={{ fontFamily: "'Poppins', sans-serif" }}>
-      <div className="w-full max-w-6xl bg-white rounded-3xl shadow-2xl overflow-auto border-l-8 border-indigo-600 p-12">
+      <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-auto border-l-8 border-indigo-600 p-16">
         <div className="text-center mb-10">
           <img
             src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Medicine_icon.svg"
             alt="Logo"
             className="mx-auto w-16 mb-4 cursor-pointer hover:animate-pulse transition"
           />
-          <h1 className="text-4xl font-extrabold text-gray-900 mb-3">Registration Form</h1>
-          <p className="text-gray-600 max-w-3xl mx-auto text-lg">
+          <h1 className="text-2xl font-bold mb-6 text-indigo-800">Registration Form</h1>
+          <p className="text-indigo-600 mt-2 text-sm">
             Register as Patient, Doctor, Admin, or Guardian by selecting your role.
           </p>
         </div>
-
-        {/* Role selection buttons */}
-        <div className="flex gap-4 justify-center mb-8">
+        <div className="flex flex-row gap-3 mb-6 justify-center">
           {["patient", "doctor", "admin", "guardian"].map((r) => (
             <button
               key={r}
               type="button"
-              className={`px-6 py-2 rounded-xl font-bold text-lg border ${role === r ? "bg-indigo-600 text-white border-indigo-700" : "bg-gray-100 text-indigo-600 border-gray-300"
-                } transition hover:bg-indigo-400 hover:text-white`}
               onClick={() => setRole(r as UserRole)}
+              className={`px-4 py-2 rounded-xl font-semibold ${role === r ? "bg-indigo-600 text-white" : "bg-indigo-100 text-indigo-700"}`}
             >
               {r.charAt(0).toUpperCase() + r.slice(1)}
             </button>
           ))}
         </div>
 
-
-        <form onSubmit={handleSubmit} className="space-y-8 max-h-[80vh] overflow-auto pr-4">
+        <form onSubmit={handleSubmit} className="bg-gray-50 px-8 py-8 rounded-2xl shadow-xl max-w-xl mx-auto space-y-8 max-h-[80vh] overflow-auto pr-4">
           {/* Common Fields */}
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-gray-700 mb-2 font-semibold">
-                Full Name <span className="text-red-500">*</span>
-              </label>
+              <label className="block mb-2 text-gray-700">Full Name <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 placeholder="Enter full name"
@@ -161,9 +155,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
               />
             </div>
             <div>
-              <label className="block text-gray-700 mb-2 font-semibold">
-                Email Address <span className="text-red-500">*</span>
-              </label>
+              <label className="block mb-2 text-gray-700">Email Address <span className="text-red-500">*</span></label>
               <input
                 type="email"
                 placeholder="Enter email"
@@ -177,9 +169,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
 
           <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-gray-700 mb-2 font-semibold">
-                Phone Number <span className="text-red-500">*</span>
-              </label>
+              <label className="block mb-2 text-gray-700">Phone Number <span className="text-red-500">*</span></label>
               <input
                 type="tel"
                 placeholder="Enter phone number"
@@ -191,9 +181,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
               />
             </div>
             <div>
-              <label className="block text-gray-700 mb-2 font-semibold">
-                Password <span className="text-red-500">*</span>
-              </label>
+              <label className="block mb-2 text-gray-700">Password <span className="text-red-500">*</span></label>
               <input
                 type="password"
                 placeholder="Create password"
@@ -206,9 +194,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-2 font-semibold">
-              Confirm Password <span className="text-red-500">*</span>
-            </label>
+            <label className="block mb-2 text-gray-700">Confirm Password <span className="text-red-500">*</span></label>
             <input
               type="password"
               placeholder="Confirm password"
@@ -224,9 +210,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
             <>
               <section className="grid grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">
-                    Date of Birth <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-2 text-gray-700">Date of Birth <span className="text-red-500">*</span></label>
                   <input
                     type="date"
                     required
@@ -236,18 +220,14 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">
-                    Gender <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-2 text-gray-700">Gender <span className="text-red-500">*</span></label>
                   <select
                     required
                     value={gender}
                     onChange={(e) => setGender(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:border-indigo-600 transition text-lg"
                   >
-                    <option value="" disabled>
-                      Select Gender
-                    </option>
+                    <option value="" disabled>Select Gender</option>
                     <option>Female</option>
                     <option>Male</option>
                     <option>Other</option>
@@ -255,18 +235,14 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
                   </select>
                 </div>
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">
-                    Marital Status <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-2 text-gray-700">Marital Status <span className="text-red-500">*</span></label>
                   <select
+                    required
                     value={maritalStatus}
                     onChange={(e) => setMaritalStatus(e.target.value)}
-                    required
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:border-indigo-600 transition text-lg"
                   >
-                    <option value="" disabled>
-                      Select Status
-                    </option>
+                    <option value="" disabled>Select Status</option>
                     <option>Single</option>
                     <option>Married</option>
                     <option>Divorced</option>
@@ -276,9 +252,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
               </section>
 
               <section>
-                <label className="block text-gray-700 mb-2 font-semibold">
-                  Address <span className="text-red-500">*</span>
-                </label>
+                <label className="block mb-2 text-gray-700">Address <span className="text-red-500">*</span></label>
                 <textarea
                   rows={3}
                   placeholder="Enter your full address"
@@ -291,9 +265,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
 
               <section className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">
-                    Emergency Contact Name <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-2 text-gray-700">Emergency Contact Name <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     placeholder="Enter contact name"
@@ -304,9 +276,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">
-                    Emergency Contact Phone <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-2 text-gray-700">Emergency Contact Phone <span className="text-red-500">*</span></label>
                   <input
                     type="tel"
                     placeholder="Enter contact phone"
@@ -321,7 +291,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
 
               <section className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">Insurance Provider</label>
+                  <label className="block mb-2 text-gray-700">Insurance Provider</label>
                   <input
                     type="text"
                     placeholder="Enter insurance provider"
@@ -331,7 +301,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">Policy Number</label>
+                  <label className="block mb-2 text-gray-700">Policy Number</label>
                   <input
                     type="text"
                     placeholder="Enter policy number"
@@ -343,9 +313,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
               </section>
 
               <section>
-                <label className="block text-gray-700 mb-2 font-semibold">
-                  Medical History / Allergies / Current Medications
-                </label>
+                <label className="block mb-2 text-gray-700">Medical History / Allergies / Current Medications</label>
                 <textarea
                   rows={4}
                   placeholder="Provide relevant medical info"
@@ -373,14 +341,9 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
 
           {role === "doctor" && (
             <>
-              {/* Doctor fields */}
-              {/* ...similar to current fields */}
-              {/* Medical License Number, Specialty, Experience, Hospital */}
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">
-                    Medical License Number <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-2 text-gray-700">Medical License Number <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     placeholder="Enter license number"
@@ -391,9 +354,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">
-                    Specialty <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-2 text-gray-700">Specialty <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     placeholder="Enter specialty (e.g., cardiology)"
@@ -406,9 +367,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">
-                    Years of Experience <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-2 text-gray-700">Years of Experience <span className="text-red-500">*</span></label>
                   <input
                     type="number"
                     min="0"
@@ -420,9 +379,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">
-                    Clinic / Hospital Name <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-2 text-gray-700">Clinic / Hospital Name <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     placeholder="Enter clinic or hospital"
@@ -438,12 +395,9 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
 
           {role === "admin" && (
             <>
-              {/* Admin fields */}
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">
-                    Employee ID <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-2 text-gray-700">Employee ID <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     placeholder="Enter Employee ID"
@@ -454,9 +408,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">
-                    Department <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-2 text-gray-700">Department <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     placeholder="Enter Department"
@@ -469,9 +421,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">
-                    Role Title <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-2 text-gray-700">Role Title <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     placeholder="Enter role title (e.g., HR Manager)"
@@ -482,9 +432,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
                   />
                 </div>
                 <div>
-                  <label className="block text-gray-700 mb-2 font-semibold">
-                    Access Level <span className="text-red-500">*</span>
-                  </label>
+                  <label className="block mb-2 text-gray-700">Access Level <span className="text-red-500">*</span></label>
                   <select
                     required
                     value={accessLevel}
@@ -492,9 +440,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl shadow-sm bg-gray-50 focus:outline-none focus:ring-4 focus:ring-indigo-400 focus:border-indigo-600 transition text-lg"
                     defaultValue=""
                   >
-                    <option value="" disabled>
-                      Select Level
-                    </option>
+                    <option value="" disabled>Select Level</option>
                     <option>Low</option>
                     <option>Medium</option>
                     <option>High</option>
@@ -506,9 +452,7 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
 
           {role === "guardian" && (
             <section>
-              <label className="block text-gray-700 mb-2 font-semibold">
-                Patient Name (optional)
-              </label>
+              <label className="block mb-2 text-gray-700">Patient Name (optional)</label>
               <input
                 type="text"
                 placeholder="Enter the name of the patient you are serving"
@@ -519,18 +463,17 @@ export default function MultiRoleRegistrationForm({ onRegisterSuccess }: MultiRo
             </section>
           )}
 
-          {/* Submit and Login */}
-          <div className="mt-8 text-center">
-            {error && <div className="mb-4 text-red-600 font-semibold">{error}</div>}
+          <div className="mt-6 text-center">
+            {error && <div className="mt-4 text-red-500 text-lg">{error}</div>}
             <button
               type="submit"
-              className="w-full max-w-md mx-auto py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xl font-extrabold shadow-lg hover:shadow-indigo-500/50 transition-shadow duration-300 drop-shadow-lg"
+              className="w-full mt-6 py-3 bg-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:bg-indigo-700 transition"
             >
               Register
             </button>
-            <p className="mt-4 text-lg text-gray-700">
+            <p className="mt-6 text-center text-indigo-700 font-semibold hover:underline cursor-pointer">
               Already have an account?{" "}
-              <Link to="/login" className="text-indigo-600 font-semibold hover:underline">
+              <Link to="/login" className="text-indigo-700 font-semibold hover:underline">
                 Login here
               </Link>
             </p>

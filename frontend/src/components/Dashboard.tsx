@@ -1,222 +1,167 @@
-import React from 'react';
-import {
-  Activity, Heart, Droplets, Shield, Users, Calendar, TrendingUp, User, Moon, Repeat
-} from 'lucide-react';
-import { UserRole } from '../App';
-import { VitalCard, VitalCardProps } from './VitalCard';
-import { StatusCard, StatusCardProps } from './StatusCard';
-import { RecentActivity } from './RecentActivity';
+import React, { useState } from "react";
 
-interface DashboardProps {
-  userRole: UserRole;
-}
+type Role = "admin" | "doctor" | "patient" | "guardian" | null;
 
-export function Dashboard({ userRole }: DashboardProps) {
-  // Patient Vitals
-  const patientVitals = [
-    { label: 'Hydration Level', value: '75', unit: '%', icon: Droplets, status: 'normal', trend: '+3%' },
-    { label: 'Sleep Quality Score', value: '85', unit: '/100', icon: Moon, status: 'normal', trend: '+2%' },
-    { label: 'Activity Level', value: '6.5K', unit: 'steps', icon: Activity, status: 'normal', trend: '+5%' },
-    { label: 'Stress Index (HRV)', value: '60', unit: 'ms', icon: Repeat, status: 'normal', trend: '-1%' }
-  ] as const;
+type UnifiedDashboardProps = {
+  userRole: Role;
+};
 
-  // Admin Vitals
-  const adminVitals = [
-    { label: 'Avg. Health Score', value: '88', unit: '/100', icon: TrendingUp, status: 'normal', trend: '+3%' },
-    { label: 'Total Appointments', value: '12.5K', unit: '', icon: Calendar, status: 'normal', trend: '+8%' }
-  ] as const;
+export default function UnifiedDashboard({ userRole }: UnifiedDashboardProps) {
+  const [darkMode, setDarkMode] = useState(false);
 
-  // Guardian Vitals
-  const guardianVitals = [
-    { label: 'Average Heart Rate', value: '70', unit: 'BPM', icon: Heart, status: 'normal', trend: '+1%' },
-    { label: 'Average Activity', value: '5.8K', unit: 'steps', icon: Activity, status: 'normal', trend: '+4%' }
-  ] as const;
-
-  // Status Cards
-  const doctorStatusCards = [
-    { label: 'Active Patients', value: '127', icon: Users, color: 'blue' },
-    { label: 'Critical Alerts', value: '3', icon: Shield, color: 'red' },
-    { label: 'Appointments Today', value: '8', icon: Calendar, color: 'green' },
-    { label: 'Data Points Collected', value: '12.4K', icon: TrendingUp, color: 'purple' }
-  ] as const;
-
-  const patientStatusCards = [
-    { label: 'Days Monitored', value: '45', icon: Calendar, color: 'blue' },
-    { label: 'Health Score', value: '92/100', icon: TrendingUp, color: 'green' },
-    { label: 'Active Sensors', value: '4', icon: Activity, color: 'purple' },
-    { label: 'Fall Risk Level', value: 'Low', icon: Shield, color: 'green' }
-  ] as const;
-
-  const adminStatusCards = [
-    { label: 'Total Users', value: '2,340', icon: Users, color: 'blue' },
-    { label: 'Active Doctors', value: '78', icon: Activity, color: 'green' },
-    { label: 'Active Patients', value: '2,120', icon: Activity, color: 'purple' },
-    { label: 'System Alerts', value: '5', icon: Shield, color: 'red' }
-  ] as const;
-
-  const guardianStatusCards = [
-    { label: 'Monitored Patients', value: '3', icon: Users, color: 'blue' },
-    { label: 'Active Alerts', value: '1', icon: Shield, color: 'red' },
-    { label: 'Upcoming Appointments', value: '2', icon: Calendar, color: 'green' },
-    { label: 'System Notifications', value: '4', icon: TrendingUp, color: 'purple' }
-  ] as const;
-
-  // Patient List for Doctors
-  const patients = ['John Doe', 'Sarah Wilson', 'Michael Brown'];
+  if (!userRole) return <div className="p-8">Loading...</div>;
 
   return (
-    <div className="space-y-6">
-      {/* Admin Dashboard Section */}
-      {userRole === 'admin' && (
-        <div className="space-y-6">
-          <header>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-gray-600">Manage system users, performance, and reports</p>
-          </header>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {adminStatusCards.map((card, i) => (
-              <StatusCard key={i} {...(card as StatusCardProps)} />
+    <div className={darkMode ? "min-h-screen bg-gray-900 text-white p-8" : "min-h-screen bg-gray-50 p-8"}>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-semibold">
+          Dashboard Overview
+          <span className="ml-3 text-lg font-normal italic">
+            ({userRole.charAt(0).toUpperCase() + userRole.slice(1)})
+          </span>
+        </h1>
+        <button
+          onClick={() => setDarkMode(!darkMode)}
+          className="bg-gray-200 dark:bg-gray-800 px-4 py-2 rounded transition hover:bg-gray-300 dark:hover:bg-gray-700"
+        >
+          {darkMode ? "Light Mode" : "Dark Mode"}
+        </button>
+      </div>
+      
+      {/* ADMIN SECTION */}
+      {userRole === "admin" && (
+        <section className="mb-10">
+          <h2 className="text-2xl font-semibold mb-4">Welcome, Admin!</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[
+              { title: "Total Doctors", value: 8, color: "text-blue-600" },
+              { title: "Total Patients", value: 230, color: "text-green-600" },
+              { title: "Appointments", value: 86, color: "text-yellow-600" },
+              { title: "Pending Reports", value: 12, color: "text-red-600" },
+            ].map((stat) => (
+              <Card key={stat.title} title={stat.title} value={String(stat.value)} color={stat.color} />
             ))}
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {adminVitals.map((stat, i) => (
-              <VitalCard key={i} {...(stat as VitalCardProps)} />
-            ))}
-          </div>
-        </div>
+        </section>
       )}
 
-      {/* Guardian Dashboard Section */}
-      {userRole === 'guardian' && (
-        <div className="space-y-6">
-          <header>
-            <h1 className="text-3xl font-bold">General Health Overview</h1>
-            <p className="text-gray-600">Explore how the system works and track sample data</p>
-          </header>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              { label: 'Platform Users', value: '2.3K+', icon: Users, color: 'blue' as const },
-              { label: 'Appointments Today', value: '560', icon: Calendar, color: 'green' as const }
-            ].map((card, i) => (
-              <StatusCard key={i} {...card} />
-            ))}
+      {/* DOCTOR SECTION */}
+      {userRole === "doctor" && (
+        <section className="mb-10">
+          <h2 className="text-2xl font-semibold mb-4">Welcome, Doctor!</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card title="Appointments Today" value="14" color="text-blue-600" />
+            <Card title="Total Patients" value="48" color="text-green-600" />
+            <Card title="Pending Reports" value="6" color="text-yellow-600" />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              { label: 'Avg Heart Rate', value: '75', unit: 'BPM', icon: Heart, status: 'normal' as const, trend: '+1%' },
-              { label: 'Avg Activity', value: '6.2K', unit: 'steps', icon: Activity, status: 'normal' as const, trend: '+5%' }
-            ].map((vital, i) => (
-              <VitalCard key={i} {...vital} />
-            ))}
+          <div className="mt-8 bg-white p-6 rounded-lg shadow-md dark:bg-gray-800">
+            <h3 className="text-xl font-semibold mb-3">Upcoming Appointments</h3>
+            <table className="w-full text-sm text-left border-t">
+              <thead>
+                <tr className="text-gray-600 dark:text-gray-200">
+                  <th className="py-2">Patient</th>
+                  <th>Time</th>
+                  <th>Symptoms</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { name: "John Doe", time: "10:30 AM", issue: "Fever" },
+                  { name: "Sarah Lee", time: "11:15 AM", issue: "Chest Pain" },
+                  { name: "Ali Khan", time: "1:00 PM", issue: "Headache" },
+                ].map((a) => (
+                  <tr key={a.name} className="border-t">
+                    <td className="py-2">{a.name}</td>
+                    <td>{a.time}</td>
+                    <td>{a.issue}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Patients/Doctors/Guardians Dashboards */}
-      {(userRole === 'doctor' || userRole === 'patient' || userRole === 'guardian') && (
-        <>
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {userRole === 'doctor' && 'Medical Dashboard'}
-                {userRole === 'patient' && 'Health Dashboard'}
-                {userRole === 'guardian' && 'Guardian Health Overview'}
-              </h1>
-              <p className="text-gray-600 mt-1">
-                {userRole === 'doctor' && 'Monitor your patients and manage care remotely'}
-                {userRole === 'patient' && 'Real-time monitoring of your health vitals and activity'}
-                {userRole === 'guardian' && "View and monitor your loved ones' health status"}
-              </p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-green-600">Live Monitoring</span>
-            </div>
+      {/* PATIENT SECTION */}
+      {userRole === "patient" && (
+        <section className="mb-10">
+          <h2 className="text-2xl font-semibold mb-4">Welcome, Patient!</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card title="Appointments" value="5" color="text-blue-600" />
+            <Card title="Prescriptions" value="12" color="text-green-600" />
+            <Card title="Upcoming Visits" value="2" color="text-yellow-600" />
           </div>
 
-          {/* Status Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {userRole === 'doctor' && doctorStatusCards.map((card, i) => (
-              <StatusCard key={i} {...(card as StatusCardProps)} />
-            ))}
-            {userRole === 'patient' && patientStatusCards.map((card, i) => (
-              <StatusCard key={i} {...(card as StatusCardProps)} />
-            ))}
-            {userRole === 'guardian' && guardianStatusCards.map((card, i) => (
-              <StatusCard key={i} {...(card as StatusCardProps)} />
-            ))}
+          <div className="mt-8 bg-white p-6 rounded-lg shadow-md dark:bg-gray-800">
+            <h3 className="text-xl font-semibold mb-3">Health Stats</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+              <HealthStat label="Heart Rate" value="76 bpm" color="text-red-500" />
+              <HealthStat label="BP" value="120/80" color="text-blue-500" />
+              <HealthStat label="BMI" value="22.5" color="text-green-500" />
+              <HealthStat label="Sleep" value="7.5 hrs" color="text-purple-500" />
+            </div>
           </div>
+        </section>
+      )}
 
-          {/* Vitals */}
-          {(userRole === 'patient' || userRole === 'guardian') && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {userRole === 'patient' && patientVitals.map((v, i) => (
-                <VitalCard key={i} {...(v as VitalCardProps)} />
-              ))}
-              {userRole === 'guardian' && guardianVitals.map((v, i) => (
-                <VitalCard key={i} {...(v as VitalCardProps)} />
+      {/* GUARDIAN SECTION */}
+      {userRole === "guardian" && (
+        <section>
+          <h2 className="text-2xl font-semibold mb-4">Welcome, Guardian!</h2>
+          <div className="bg-white p-6 rounded-lg shadow-md mb-6 dark:bg-gray-800">
+            <h3 className="text-xl font-semibold mb-3">Dependents Overview</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { name: "Emma", age: 10, lastVisit: "Aug 14, 2025" },
+                { name: "Mohan", age: 45, lastVisit: "Sep 3, 2025" },
+              ].map((d) => (
+                <div key={d.name} className="border p-4 rounded-lg">
+                  <p className="font-medium">{d.name}</p>
+                  <p className="text-gray-500 text-sm">Age: {d.age}</p>
+                  <p className="text-gray-500 text-sm">Last Visit: {d.lastVisit}</p>
+                </div>
               ))}
             </div>
-          )}
-
-          {/* Main Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              {/* Trends */}
-              {(userRole === 'doctor' || userRole === 'patient') && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Real-time Health Trends</h3>
-                  <div className="h-64 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg flex items-center justify-center">
-                    <div className="text-center">
-                      <Activity className="w-12 h-12 text-blue-600 mx-auto mb-2" />
-                      <p className="text-gray-600">Interactive charts and real-time data visualization</p>
-                      <p className="text-sm text-gray-500 mt-1">Connected to live sensor data</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Patient Overview (Doctor only) */}
-              {userRole === 'doctor' && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Patient Overview</h3>
-                  <div className="space-y-3">
-                    {patients.map((p, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                            <User className="w-5 h-5 text-blue-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{p}</p>
-                            <p className="text-sm text-gray-500">Last update: 2 min ago</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span className="text-sm text-green-600 font-medium">Normal</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Right Column */}
-            <div className="space-y-6">
-              {(userRole === 'doctor' || userRole === 'patient') && (
-                <RecentActivity userRole={userRole} />
-              )}
-            </div>
           </div>
-        </>
+
+          <div className="bg-white p-6 rounded-lg shadow-md dark:bg-gray-800">
+            <h3 className="text-xl font-semibold mb-3">Upcoming Visits</h3>
+            <p className="text-gray-600 dark:text-gray-300">No upcoming visits scheduled.</p>
+          </div>
+        </section>
       )}
     </div>
   );
 }
+
+/* Reusable card and stats components */
+const Card = ({
+  title,
+  value,
+  color,
+}: {
+  title: string;
+  value: string;
+  color: string;
+}) => (
+  <div className="bg-white p-5 rounded-lg shadow hover:shadow-lg transition dark:bg-gray-800">
+    <p className="text-gray-500 dark:text-gray-300">{title}</p>
+    <p className={`text-4xl font-bold mt-2 ${color}`}>{value}</p>
+  </div>
+);
+
+const HealthStat = ({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: string;
+  color: string;
+}) => (
+  <div>
+    <p className="text-gray-500 dark:text-gray-300">{label}</p>
+    <h3 className={`text-3xl font-bold ${color}`}>{value}</h3>
+  </div>
+);

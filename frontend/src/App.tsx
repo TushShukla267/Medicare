@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Header } from './components/Header';
-import { Sidebar } from './components/Sidebar';
-import { Dashboard } from './components/Dashboard';
+import { useLocation } from "react-router-dom";
+import  Dashboard   from './components/Dashboard';
 import { VitalSigns } from './components/VitalSigns';
 import { FallDetection } from './components/FallDetection';
 import { Telemedicine } from './components/Telemedicine';
@@ -13,19 +12,29 @@ import { DoctorPortal } from './components/DoctorPortal';
 export type UserRole = 'patient' | 'doctor' | 'admin' | 'guardian';
 export type NavigationItem = 'dashboard' | 'vitals' | 'fall-detection' | 'telemedicine' | 'analytics' | 'patient-portal' | 'doctor-portal';
 
+function getRoleFromPath(path: string): UserRole {
+  if (path.includes('doctor-dashboard')) return 'doctor';
+  if (path.includes('admin-dashboard')) return 'admin';
+  if (path.includes('patient-dashboard')) return 'patient';
+  if (path.includes('guardian-dashboard')) return 'guardian';
+  // Fallback if route is /home or unknown - you could also redirect, or show nothing
+  return 'patient';
+}
+
 function App() {
   const [activeNav, setActiveNav] = useState<NavigationItem>('dashboard');
-  const [userRole, setUserRole] = useState<UserRole>('patient');
   const [emergencyAlert, setEmergencyAlert] = useState<{
     type: 'fall' | 'vital' | 'emergency';
     message: string;
     severity: 'low' | 'medium' | 'high' | 'critical';
   } | null>(null);
 
+  const location = useLocation();
+  const userRole = getRoleFromPath(location.pathname);
+
   // Simulate emergency alerts
   useEffect(() => {
     const interval = setInterval(() => {
-      // Random emergency simulation for demo purposes
       if (Math.random() < 0.1) {
         const alerts = [
           { type: 'fall' as const, message: 'Fall detected in living room', severity: 'critical' as const },
@@ -35,7 +44,6 @@ function App() {
         setEmergencyAlert(alerts[Math.floor(Math.random() * alerts.length)]);
       }
     }, 30000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -55,8 +63,7 @@ function App() {
         return <PatientPortal />;
       case 'doctor-portal':
         return <DoctorPortal />;
-      default:
-        return <Dashboard userRole={userRole} />;
+      // no default hardcoding!
     }
   };
 
@@ -68,21 +75,11 @@ function App() {
           onDismiss={() => setEmergencyAlert(null)}
         />
       )}
-      
-      <Header userRole={userRole} onRoleChange={setUserRole} />
-      
-      <div className="flex">
-        <Sidebar
-          activeNav={activeNav}
-          onNavigate={setActiveNav}
-          userRole={userRole}
-        />
-        
-        <main className="flex-1 p-6 ml-64">
-          {renderActiveComponent()}
-        </main>
-      </div>
+      <main className="flex-1 p-6 ml-64">
+        {renderActiveComponent()}
+      </main>
     </div>
   );
 }
+
 export default App;

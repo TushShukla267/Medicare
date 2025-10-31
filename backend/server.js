@@ -53,7 +53,7 @@ const Doctor = sequelize.define('Doctor', {
   first_name: DataTypes.STRING,
   last_name: DataTypes.STRING,
   medical_license: { type: DataTypes.STRING, unique: true },
-  specialization: DataTypes.STRING, // ✅ matches frontend
+  specialization: DataTypes.STRING,
   phone: DataTypes.STRING,
   hospital_affiliation: DataTypes.STRING,
   years_experience: DataTypes.INTEGER,
@@ -131,7 +131,7 @@ app.post('/api/auth/register', async (req, res) => {
         last_name,
         phone: req.body.phone,
         date_of_birth: req.body.date_of_birth,
-        gender: req.body.gender?.toLowerCase(), // ✅ lowercase safe
+        gender: req.body.gender?.toLowerCase(),
         address: req.body.address,
         emergency_contact: req.body.emergency_contact || "",
         medical_history: req.body.medical_history || ""
@@ -142,7 +142,7 @@ app.post('/api/auth/register', async (req, res) => {
         first_name,
         last_name,
         medical_license: req.body.medical_license,
-        specialization: req.body.specialization, // ✅ matches frontend
+        specialization: req.body.specialization,
         phone: req.body.phone,
         hospital_affiliation: req.body.hospital_affiliation,
         years_experience: req.body.years_experience ? parseInt(req.body.years_experience, 10) : null
@@ -155,7 +155,7 @@ app.post('/api/auth/register', async (req, res) => {
         employee_id: req.body.employee_id,
         department: req.body.department,
         phone: req.body.phone,
-        access_level: req.body.access_level?.toLowerCase() || "admin" // ✅ lowercase safe
+        access_level: req.body.access_level?.toLowerCase() || "admin"
       });
     } else if (role === 'guardian') {
       await Guardian.create({
@@ -163,7 +163,7 @@ app.post('/api/auth/register', async (req, res) => {
         first_name,
         last_name,
         phone: req.body.phone,
-        relationship_type: req.body.relationship_type || null // ✅ matches frontend
+        relationship_type: req.body.relationship_type || null
       });
     }
 
@@ -182,13 +182,14 @@ app.post('/api/auth/login', async (req, res) => {
   if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
   const token = generateToken(user);
-  res.json({ message: 'Login successful', token });
+  // 👇 Add role in the response
+  res.json({ message: 'Login successful', token, role: user.role });
 });
 
 app.get('/api/auth/verify', authMiddleware, async (req, res) => {
   const user = await User.findByPk(req.user.id);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ user });
+  res.json({ user, role: user.role });
 });
 
 app.post('/api/auth/logout', authMiddleware, (req, res) => {
