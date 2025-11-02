@@ -1,3 +1,5 @@
+// File: MultiRoleLoginForm.tsx
+
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../AuthContext";
@@ -46,6 +48,13 @@ export default function MultiRoleLoginForm({ onLoginSuccess }: MultiRoleLoginFor
         setError(data.error || "Login failed");
         return;
       }
+
+      // Role verification
+      if (data.role !== role) {
+        setError("Invalid credentials for the selected role");
+        return;
+      }
+
       setAuth(data.token, data.role);
       setError(null);
       onLoginSuccess();
