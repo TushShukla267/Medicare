@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { Heart, Activity, Users, Calendar, Bell, Settings, LogOut, Menu, X, Phone, Video, FileText, TrendingUp, AlertCircle, Clock, User, Stethoscope, Shield, UserPlus, ChevronRight, Thermometer, Pill, ClipboardList } from 'lucide-react';
-import { Telemedicine } from './Telemedicine'; // Import your telemedicine component here
-import AppointmentScheduler from './Aptmtschd'; // Import your AppointmentScheduler
+import {
+  Heart, Activity, Users, Calendar, Bell, Settings, LogOut, Menu, X, Phone,
+  Video, FileText, TrendingUp, AlertCircle, Clock, User, Stethoscope, Shield,
+  UserPlus, ChevronRight, Thermometer, Pill, ClipboardList
+} from 'lucide-react';
+import { Telemedicine } from './Telemedicine';
+import AppointmentScheduler from './Aptmtschd';
+import { NavItem } from '../UI/dashboard/NavItem';
+import { useNavigate } from 'react-router-dom';
 
 type Role = 'patient' | 'doctor' | 'admin' | 'guardian' | null;
 
-// Mock data
 const patientData = {
   name: "John Doe",
   age: 45,
@@ -73,17 +78,19 @@ export default function HealthcareDashboard({ userRole }: UnifiedDashboardProps)
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeSection, setActiveSection] = useState('overview');
   const [darkMode, setDarkMode] = useState(false);
+  const navigate = useNavigate();
 
   if (!userRole) return <div className="p-8">Loading...</div>;
+
   const roleColors = {
-    patient: 'from-blue-500 to-cyan-500',
-    doctor: 'from-emerald-500 to-teal-500',
-    admin: 'from-purple-500 to-pink-500',
-    guardian: 'from-orange-500 to-amber-500'
+    patient: 'from-blue-500 to-cyan-600',
+    doctor: 'from-emerald-500 to-teal-600',
+    admin: 'from-purple-500 to-pink-600',
+    guardian: 'from-orange-500 to-amber-600'
   };
 
   const getRoleData = () => {
-    switch(userRole) {
+    switch (userRole) {
       case 'patient': return patientData;
       case 'doctor': return doctorData;
       case 'admin': return adminData;
@@ -93,219 +100,214 @@ export default function HealthcareDashboard({ userRole }: UnifiedDashboardProps)
   };
 
   return (
-    <div className={`${darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-br from-gray-50 to-gray-100'} min-h-screen`}>
-      {/* Dark Mode Toggle */}
-      <div className="fixed top-4 right-4 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 flex gap-2">
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className="px-3 py-1 rounded-md text-sm font-medium transition bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
-        >
-          {darkMode ? "Light Mode" : "Dark Mode"}
-        </button>
-      </div>
+    <div className={`fixed inset-0 min-h-screen w-screen overflow-auto
+      ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900'}
+      transition-colors duration-700 z-50 font-sans`}>
 
       {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 h-full bg-white dark:bg-gray-800 shadow-2xl transition-all duration-300 z-40 ${sidebarOpen ? 'w-64' : 'w-20'}`}>
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-8">
-            {sidebarOpen && (
-              <div className="flex items-center gap-2">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-r ${roleColors[userRole]} flex items-center justify-center`}>
-                  <Heart className="text-white" size={24} />
+      <aside className={`fixed left-0 top-0 h-full ${darkMode ? 'bg-gray-900' : 'bg-white'} 
+        shadow-2xl transition-all duration-400 z-40 flex flex-col 
+        ${sidebarOpen ? 'w-64' : 'w-20'} animate-slide-in`}>
+        <div className="p-6 flex flex-col justify-between h-full">
+          <div>
+            <div className="flex items-center justify-between mb-10">
+              <div
+                className="flex items-center gap-3 animate-fadeIn cursor-pointer select-none"
+                onClick={() => setSidebarOpen((open) => !open)}
+                tabIndex={0}
+                role="button"
+                title="Toggle sidebar"
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') setSidebarOpen((open) => !open); }}
+              >
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-r ${roleColors[userRole]} flex items-center justify-center shadow-lg`}>
+                  <Heart className="text-white" size={28} />
                 </div>
-                <span className="font-bold text-xl text-gray-800 dark:text-white">HealthCare</span>
+                {sidebarOpen && (
+                  <span className={`font-extrabold text-2xl tracking-wide ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                    HealthCare
+                  </span>
+                )}
               </div>
-            )}
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
-            >
-              {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
+            </div>
+            <nav className="space-y-3">
+              {userRole === 'patient' && (
+                <>
+                  <NavItem icon={<Activity />} label="Overview" active={activeSection === 'overview'}
+                    onClick={() => setActiveSection('overview')} compact={!sidebarOpen} />
+                  <NavItem icon={<Calendar />} label="Appointments" active={activeSection === 'appointments'}
+                    onClick={() => setActiveSection('appointments')} compact={!sidebarOpen} />
+                  <NavItem icon={<Pill />} label="Medications" active={activeSection === 'medications'}
+                    onClick={() => setActiveSection('medications')} compact={!sidebarOpen} />
+                  <NavItem icon={<FileText />} label="Records" active={activeSection === 'records'}
+                    onClick={() => setActiveSection('records')} compact={!sidebarOpen} />
+                  <NavItem icon={<Video />} label="Telemedicine" active={activeSection === 'telemedicine'}
+                    onClick={() => setActiveSection('telemedicine')} compact={!sidebarOpen} />
+                </>
+              )}
+              {userRole === 'doctor' && (
+                <>
+                  <NavItem icon={<Activity />} label="Overview" active={activeSection === 'overview'}
+                    onClick={() => setActiveSection('overview')} compact={!sidebarOpen} />
+                  <NavItem icon={<Calendar />} label="Schedule" active={activeSection === 'schedule'}
+                    onClick={() => setActiveSection('schedule')} compact={!sidebarOpen} />
+                  <NavItem icon={<Users />} label="Patients" active={activeSection === 'patients'}
+                    onClick={() => setActiveSection('patients')} compact={!sidebarOpen} />
+                  <NavItem icon={<FileText />} label="Reports" active={activeSection === 'reports'}
+                    onClick={() => setActiveSection('reports')} compact={!sidebarOpen} />
+                  <NavItem icon={<Video />} label="Telemedicine" active={activeSection === 'telemedicine'}
+                    onClick={() => setActiveSection('telemedicine')} compact={!sidebarOpen} />
+                </>
+              )}
+              {userRole === 'admin' && (
+                <>
+                  <NavItem icon={<Activity />} label="Dashboard" active={activeSection === 'overview'}
+                    onClick={() => setActiveSection('overview')} compact={!sidebarOpen} />
+                  <NavItem icon={<Users />} label="Users" active={activeSection === 'users'}
+                    onClick={() => setActiveSection('users')} compact={!sidebarOpen} />
+                  <NavItem icon={<Stethoscope />} label="Doctors" active={activeSection === 'doctors'}
+                    onClick={() => setActiveSection('doctors')} compact={!sidebarOpen} />
+                  <NavItem icon={<Calendar />} label="Appointments" active={activeSection === 'appointments'}
+                    onClick={() => setActiveSection('appointments')} compact={!sidebarOpen} />
+                  <NavItem icon={<TrendingUp />} label="Analytics" active={activeSection === 'analytics'}
+                    onClick={() => setActiveSection('analytics')} compact={!sidebarOpen} />
+                </>
+              )}
+              {userRole === 'guardian' && (
+                <>
+                  <NavItem icon={<Activity />} label="Overview" active={activeSection === 'overview'}
+                    onClick={() => setActiveSection('overview')} compact={!sidebarOpen} />
+                  <NavItem icon={<Users />} label="Dependents" active={activeSection === 'dependents'}
+                    onClick={() => setActiveSection('dependents')} compact={!sidebarOpen} />
+                  <NavItem icon={<Calendar />} label="Appointments" active={activeSection === 'appointments'}
+                    onClick={() => setActiveSection('appointments')} compact={!sidebarOpen} />
+                  <NavItem icon={<FileText />} label="Records" active={activeSection === 'records'}
+                    onClick={() => setActiveSection('records')} compact={!sidebarOpen} />
+                  <NavItem icon={<Video />} label="Telemedicine" active={activeSection === 'telemedicine'}
+                    onClick={() => setActiveSection('telemedicine')} compact={!sidebarOpen} />
+                </>
+              )}
+            </nav>
           </div>
-
-          <nav className="space-y-2">
-            {userRole === 'patient' && (
-              <>
-                <NavItem icon={<Activity />} label="Overview" active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} compact={!sidebarOpen} />
-                <NavItem icon={<Calendar />} label="Appointments" active={activeSection === 'appointments'} onClick={() => setActiveSection('appointments')} compact={!sidebarOpen} />
-                <NavItem icon={<Pill />} label="Medications" active={activeSection === 'medications'} onClick={() => setActiveSection('medications')} compact={!sidebarOpen} />
-                <NavItem icon={<FileText />} label="Records" active={activeSection === 'records'} onClick={() => setActiveSection('records')} compact={!sidebarOpen} />
-                <NavItem icon={<Video />} label="Telemedicine" active={activeSection === 'telemedicine'} onClick={() => setActiveSection('telemedicine')} compact={!sidebarOpen} />
-              </>
-            )}
-            {userRole === 'doctor' && (
-              <>
-                <NavItem icon={<Activity />} label="Overview" active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} compact={!sidebarOpen} />
-                <NavItem icon={<Calendar />} label="Schedule" active={activeSection === 'schedule'} onClick={() => setActiveSection('schedule')} compact={!sidebarOpen} />
-                <NavItem icon={<Users />} label="Patients" active={activeSection === 'patients'} onClick={() => setActiveSection('patients')} compact={!sidebarOpen} />
-                <NavItem icon={<FileText />} label="Reports" active={activeSection === 'reports'} onClick={() => setActiveSection('reports')} compact={!sidebarOpen} />
-                <NavItem icon={<Video />} label="Consultations" active={activeSection === 'consultations'} onClick={() => setActiveSection('consultations')} compact={!sidebarOpen} />
-              </>
-            )}
-            {userRole === 'admin' && (
-              <>
-                <NavItem icon={<Activity />} label="Dashboard" active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} compact={!sidebarOpen} />
-                <NavItem icon={<Users />} label="Users" active={activeSection === 'users'} onClick={() => setActiveSection('users')} compact={!sidebarOpen} />
-                <NavItem icon={<Stethoscope />} label="Doctors" active={activeSection === 'doctors'} onClick={() => setActiveSection('doctors')} compact={!sidebarOpen} />
-                <NavItem icon={<Calendar />} label="Appointments" active={activeSection === 'appointments'} onClick={() => setActiveSection('appointments')} compact={!sidebarOpen} />
-                <NavItem icon={<TrendingUp />} label="Analytics" active={activeSection === 'analytics'} onClick={() => setActiveSection('analytics')} compact={!sidebarOpen} />
-              </>
-            )}
-            {userRole === 'guardian' && (
-              <>
-                <NavItem icon={<Activity />} label="Overview" active={activeSection === 'overview'} onClick={() => setActiveSection('overview')} compact={!sidebarOpen} />
-                <NavItem icon={<Users />} label="Dependents" active={activeSection === 'dependents'} onClick={() => setActiveSection('dependents')} compact={!sidebarOpen} />
-                <NavItem icon={<Calendar />} label="Appointments" active={activeSection === 'appointments'} onClick={() => setActiveSection('appointments')} compact={!sidebarOpen} />
-                <NavItem icon={<FileText />} label="Records" active={activeSection === 'records'} onClick={() => setActiveSection('records')} compact={!sidebarOpen} />
-              </>
-            )}
-          </nav>
-
-          <div className="absolute bottom-6 left-6 right-6 space-y-2">
+          <div className="absolute bottom-6 left-6 right-6 flex flex-col gap-3">
             <NavItem icon={<Settings />} label="Settings" compact={!sidebarOpen} />
-            <NavItem icon={<LogOut />} label="Logout" compact={!sidebarOpen} />
+            <NavItem icon={<LogOut />} label="Logout" compact={!sidebarOpen}
+              onClick={() => {
+                navigate('/login');
+              }} />
           </div>
         </div>
       </aside>
-
-      {/* Main Content */}
-      <main className={`transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'} p-8`}>
-        {/* Header */}
-        <header className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
-                Welcome back, {getRoleData()?.name}!
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
-                {userRole === 'patient' && "Here's your health summary"}
-                {userRole === 'doctor' && "You have 8 appointments today"}
-                {userRole === 'admin' && "System overview and analytics"}
-                {userRole === 'guardian' && "Monitor your dependents' health"}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <button className="relative p-3 bg-white dark:bg-gray-700 rounded-xl shadow-md hover:shadow-lg transition">
-                <Bell size={20} className="text-gray-600 dark:text-gray-300" />
-                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${roleColors[userRole]} flex items-center justify-center text-white font-bold shadow-md`}>
-                {getRoleData()?.name.split(' ').map(n => n[0]).join('')}
-              </div>
+      <main className={`transition-all duration-500 ${sidebarOpen ? 'ml-64' : 'ml-20'} p-8 animate-fadeIn min-h-screen`}>
+        <header className="mb-10 flex items-center justify-between animate-fadeIn">
+          <div>
+            <h1 className="text-4xl font-extrabold leading-tight tracking-wide transition-colors duration-500">
+              Welcome back, {getRoleData()?.name}!
+            </h1>
+            <p className="mt-2 text-lg text-gray-600 dark:text-gray-300 transition-colors duration-500">
+              {userRole === 'patient' && "Here's your health summary"}
+              {userRole === 'doctor' && "You have 8 appointments today"}
+              {userRole === 'admin' && "System overview and analytics"}
+              {userRole === 'guardian' && "Monitor your dependents' health"}
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <button className="relative p-4 bg-white dark:bg-gray-700 rounded-xl shadow-lg hover:shadow-xl transition duration-300 focus:outline-none focus:ring-4 focus:ring-cyan-400 animate-bounce">
+              <Bell size={24} className="text-gray-600 dark:text-gray-300" />
+              <span className="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
+            </button>
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="px-4 py-2 rounded-lg text-base font-semibold bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 shadow-md hover:shadow-lg focus:ring-4 focus:ring-cyan-400 outline-none transition"
+              aria-label="Toggle dark mode"
+              title="Toggle dark mode"
+            >
+              {darkMode ? "Light Mode" : "Dark Mode"}
+            </button>
+            <div className={`w-14 h-14 rounded-3xl bg-gradient-to-r ${roleColors[userRole]} 
+              flex items-center justify-center text-white font-bold text-xl shadow-lg`}>
+              {getRoleData()?.name.split(' ').map((n: string) => n[0]).join('')}
             </div>
           </div>
         </header>
-
-        {/* Role-Specific Dashboard */}
         {userRole === 'patient' && (
           activeSection === 'telemedicine' ? (
             <Telemedicine userRole={userRole} />
           ) : (
-            <PatientDashboard data={patientData} activeSection={activeSection} />
+            <PatientDashboard data={patientData} activeSection={activeSection} dark={darkMode} />
           )
         )}
-        {userRole === 'doctor' && <DoctorDashboard data={doctorData} activeSection={activeSection} />}
-        {userRole === 'admin' && <AdminDashboard data={adminData} activeSection={activeSection} />}
-        {userRole === 'guardian' && <GuardianDashboard data={guardianData} activeSection={activeSection} />}
+        {userRole === 'doctor' && (
+          activeSection === 'telemedicine' ? (
+            <Telemedicine userRole={userRole} />
+          ) : (
+            <DoctorDashboard data={doctorData} activeSection={activeSection} dark={darkMode} />
+          )
+        )}
+        {userRole === 'admin' && (
+          <AdminDashboard data={adminData} activeSection={activeSection} dark={darkMode} />
+        )}
+        {userRole === 'guardian' && (
+          activeSection === 'telemedicine' ? (
+            <Telemedicine userRole={userRole} />
+          ) : (
+            <GuardianDashboard data={guardianData} activeSection={activeSection} dark={darkMode} />
+          )
+        )}
       </main>
     </div>
   );
 }
 
-function NavItem({ icon, label, active = false, onClick = () => {}, compact = false }: any) {
-  return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition ${
-        active 
-          ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg' 
-          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-      } ${compact ? 'justify-center' : ''}`}
-    >
-      <span className={active ? 'scale-110' : ''}>{React.cloneElement(icon, { size: 20 })}</span>
-      {!compact && <span className="font-medium">{label}</span>}
-    </button>
-  );
-}
-
-function PatientDashboard({ data, activeSection }: any) {
+function PatientDashboard({ data, activeSection, dark }: any) {
   if (activeSection === 'overview') {
     return (
-      <div className="space-y-6">
-        {/* Vital Signs */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatCard 
-            icon={<Heart className="text-red-500" />}
-            label="Heart Rate"
-            value={`${data.vitals.heartRate} bpm`}
-            trend="+2%"
-            color="red"
-          />
-          <StatCard 
-            icon={<Activity className="text-blue-500" />}
-            label="Blood Pressure"
-            value={data.vitals.bloodPressure}
-            trend="Normal"
-            color="blue"
-          />
-          <StatCard 
-            icon={<Thermometer className="text-orange-500" />}
-            label="Temperature"
-            value={`${data.vitals.temperature}°F`}
-            trend="Normal"
-            color="orange"
-          />
-          <StatCard 
-            icon={<Activity className="text-green-500" />}
-            label="Oxygen"
-            value={`${data.vitals.oxygen}%`}
-            trend="Good"
-            color="green"
-          />
+      <div className="space-y-10 animate-fadeIn">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
+          <StatCard icon={<Heart className="text-red-500 animate-heartbeat" />} label="Heart Rate" value={`${data.vitals.heartRate} bpm`} trend="Normal" color="red" darkMode={dark} />
+          <StatCard icon={<Activity className="text-blue-500 animate-bounce" />} label="Blood Pressure" value={data.vitals.bloodPressure} trend="Optimal range" color="blue" darkMode={dark} />
+          <StatCard icon={<Thermometer className="text-orange-500 animate-pulse" />} label="Temperature" value={`${data.vitals.temperature}°F`} trend="Normal body temp" color="orange" darkMode={dark} />
+          <StatCard icon={<Activity className="text-green-500 animate-bounce" />} label="Oxygen Level" value={`${data.vitals.oxygen}%`} trend="Healthy oxygen" color="green" darkMode={dark} />
         </div>
-        {/* Appointments & Medications */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">Upcoming Appointments</h2>
-              <Calendar className="text-blue-500" size={24} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 transition-transform hover:scale-105 duration-300 animate-fadeIn">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Upcoming Appointments</h2>
+              <Calendar className="text-blue-600" size={26} />
             </div>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {data.appointments.filter((a: any) => a.status === 'upcoming').map((apt: any) => (
-                <div key={apt.id} className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl hover:shadow-md transition dark:from-blue-900 dark:to-cyan-900">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center text-white font-bold">
+                <div key={apt.id} className="flex items-center gap-5 p-5 bg-accent/60 rounded-2xl border border-border transition-shadow hover:shadow-lg animate-fadeIn">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-lg animate-bounce shadow-md shadow-cyan-400/70">
                     {apt.doctor.split(' ')[1][0]}
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-800 dark:text-white">{apt.doctor}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">{apt.specialty}</p>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{apt.doctor}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-300">{apt.specialty}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-gray-800 dark:text-white">{apt.date}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">{apt.time}</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{apt.date}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{apt.time}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">Current Medications</h2>
-              <Pill className="text-purple-500" size={24} />
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 transition-transform hover:scale-105 duration-300 animate-fadeIn">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Current Medications</h2>
+              <Pill className="text-purple-600 animate-pulse" size={26} />
             </div>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {data.medications.map((med: any, idx: number) => (
-                <div key={idx} className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:shadow-md transition dark:from-purple-900 dark:to-pink-900">
+                <div key={idx} className="p-5 bg-accent/50 rounded-2xl border border-border transition-shadow hover:shadow-lg animate-fadeIn">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-800 dark:text-white">{med.name}</h3>
-                    <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium dark:bg-purple-700 dark:text-purple-100">
+                    <h3 className="font-semibold text-gray-900 dark:text-white">{med.name}</h3>
+                    <span className="px-4 py-1 bg-purple-200 text-purple-800 rounded-full text-sm font-semibold dark:bg-purple-800 dark:text-purple-200">
                       {med.dosage}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{med.frequency}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Prescribed by {med.prescribed}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Prescribed by {med.prescribed}</p>
                 </div>
               ))}
             </div>
@@ -316,79 +318,54 @@ function PatientDashboard({ data, activeSection }: any) {
   }
   if (activeSection === 'appointments') {
     return (
-      <div className="max-w-2xl mx-auto py-12">
-        <AppointmentScheduler onBook={(details) => {
+      <div className="max-w-3xl mx-auto py-16 animate-fadeIn">
+        <AppointmentScheduler onBook={(details: any) => {
           console.log('Booked appointment:', details);
         }} />
       </div>
     );
   }
-  return <div className="text-center text-gray-500 dark:text-gray-400 mt-20">Content for {activeSection}</div>;
+  return <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">Content for {activeSection}</div>;
 }
 
-function DoctorDashboard({ data, activeSection }: any) {
+function DoctorDashboard({ data, activeSection, dark }: any) {
   if (activeSection === 'overview') {
     return (
-      <div className="space-y-6">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatCard 
-            icon={<Users className="text-emerald-500" />}
-            label="Today's Patients"
-            value={data.stats.todayPatients}
-            trend="+3 from yesterday"
-            color="emerald"
-          />
-          <StatCard 
-            icon={<FileText className="text-blue-500" />}
-            label="Pending Reports"
-            value={data.stats.pendingReports}
-            trend="2 urgent"
-            color="blue"
-          />
-          <StatCard 
-            icon={<Users className="text-purple-500" />}
-            label="Total Patients"
-            value={data.stats.totalPatients}
-            trend="+12 this month"
-            color="purple"
-          />
-          <StatCard 
-            icon={<TrendingUp className="text-yellow-500" />}
-            label="Rating"
-            value={`${data.stats.rating}/5.0`}
-            trend="Excellent"
-            color="yellow"
-          />
+      <div className="space-y-10 animate-fadeIn">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
+          <StatCard icon={<Users className="text-emerald-500 animate-bounce" />} label="Today's Patients" value={data.stats.todayPatients} trend="+3 from yesterday" color="emerald" darkMode={dark} />
+          <StatCard icon={<FileText className="text-blue-500 animate-pulse" />} label="Pending Reports" value={data.stats.pendingReports} trend="2 urgent" color="blue" darkMode={dark} />
+          <StatCard icon={<Users className="text-purple-500 animate-bounce" />} label="Total Patients" value={data.stats.totalPatients} trend="+12 this month" color="purple" darkMode={dark} />
+          <StatCard icon={<TrendingUp className="text-yellow-500 animate-pulse" />} label="Rating" value={`${data.stats.rating}/5.0`} trend="Excellent" color="yellow" darkMode={dark} />
         </div>
-
-        {/* Today's Schedule */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Today's Schedule</h2>
-            <Clock className="text-emerald-500" size={24} />
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 transition-transform hover:scale-105 duration-300 animate-fadeIn">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Today's Schedule</h2>
+            <Clock className="text-emerald-500 animate-bounce" size={26} />
           </div>
-          <div className="space-y-3">
+          <div className="space-y-5">
             {data.appointments.map((apt: any) => (
-              <div key={apt.id} className={`flex items-center gap-4 p-4 rounded-xl transition hover:shadow-md ${
-                apt.status === 'upcoming' ? 'bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900 dark:to-teal-900' : 'bg-gray-50 dark:bg-gray-700'
+              <div key={apt.id} className={`flex items-center gap-6 p-5 rounded-2xl border transition-shadow hover:shadow-lg animate-fadeIn ${
+                apt.status === 'upcoming'
+                  ? 'bg-accent/60 border-success/30 shadow-success/40'
+                  : 'bg-muted/30 border-border'
               }`}>
-                <div className={`w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-lg ${
-                  apt.status === 'upcoming' ? 'bg-gradient-to-r from-emerald-500 to-teal-500' : 'bg-gray-400'
+                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-md ${
+                  apt.status === 'upcoming'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600'
+                    : 'bg-gray-500/40'
                 }`}>
                   {apt.time.split(':')[0]}:{apt.time.split(':')[1].split(' ')[0]}
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800 dark:text-white">{apt.patient}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{apt.condition}</p>
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{apt.patient}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-300">{apt.condition}</p>
                 </div>
-                <span className={`px-4 py-2 rounded-full text-sm font-medium ${
-                  apt.status === 'upcoming' 
-                    ? 'bg-emerald-100 text-emerald-700' 
-                    : 'bg-gray-200 text-gray-600'
-                }`}>
-                  {apt.status}
-                </span>
+                <span className={`px-5 py-2 rounded-full text-sm font-semibold ${
+                  apt.status === 'upcoming'
+                    ? 'bg-success/30 text-success'
+                    : 'bg-gray-300 text-gray-600'
+                }`}>{apt.status}</span>
               </div>
             ))}
           </div>
@@ -396,162 +373,143 @@ function DoctorDashboard({ data, activeSection }: any) {
       </div>
     );
   }
-  return <div className="text-center text-gray-500 dark:text-gray-400 mt-20">Content for {activeSection}</div>;
+  return <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">Content for {activeSection}</div>;
 }
 
-function AdminDashboard({ data, activeSection }: any) {
+function AdminDashboard({ data, activeSection, dark }: any) {
   if (activeSection === 'overview') {
     return (
-      <div className="space-y-6">
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <StatCard 
-            icon={<Stethoscope className="text-purple-500" />}
-            label="Total Doctors"
-            value={data.stats.totalDoctors}
-            trend="+2 this week"
-            color="purple"
-          />
-          <StatCard 
-            icon={<Users className="text-blue-500" />}
-            label="Total Patients"
-            value={data.stats.totalPatients}
-            trend="+45 this month"
-            color="blue"
-          />
-          <StatCard 
-            icon={<Calendar className="text-emerald-500" />}
-            label="Appointments"
-            value={data.stats.appointments}
-            trend="Today"
-            color="emerald"
-          />
-          <StatCard 
-            icon={<TrendingUp className="text-pink-500" />}
-            label="Revenue"
-            value={`$${(data.stats.revenue / 1000).toFixed(1)}k`}
-            trend="+8.2% vs last month"
-            color="pink"
-          />
+      <div className="space-y-10 animate-fadeIn">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
+          <StatCard icon={<Stethoscope className="text-purple-500 animate-bounce" />} label="Total Doctors" value={data.stats.totalDoctors} trend="+2 this week" color="purple" darkMode={dark} />
+          <StatCard icon={<Users className="text-blue-500 animate-bounce" />} label="Total Patients" value={data.stats.totalPatients} trend="+45 this month" color="blue" darkMode={dark} />
+          <StatCard icon={<Calendar className="text-emerald-500 animate-pulse" />} label="Appointments" value={data.stats.appointments} trend="Today" color="emerald" darkMode={dark} />
+          <StatCard icon={<TrendingUp className="text-pink-500 animate-bounce" />} label="Revenue" value={`$${(data.stats.revenue / 1000).toFixed(1)}k`} trend="+8.2% vs last month" color="pink" darkMode={dark} />
         </div>
-
-        {/* Recent Activity & Analytics */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 transition-transform hover:scale-105 duration-300 animate-fadeIn">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">Recent Activity</h2>
-              <Activity className="text-purple-500" size={24} />
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Recent Activity</h2>
+              <Activity className="text-purple-600 animate-pulse" size={26} />
             </div>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {data.recentActivity.map((activity: any, idx: number) => (
-                <div key={idx} className="flex items-center gap-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900 dark:to-pink-900 rounded-xl">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white">
-                    {activity.type === 'registration' && <UserPlus size={18} />}
-                    {activity.type === 'appointment' && <Calendar size={18} />}
-                    {activity.type === 'report' && <FileText size={18} />}
+                <div key={idx} className="flex items-center gap-5 p-4 bg-accent/60 rounded-2xl border border-border animate-fadeIn shadow-md hover:shadow-lg transition-shadow">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center text-white animate-bounce shadow-lg">
+                    {activity.type === 'registration' && <UserPlus size={20} />}
+                    {activity.type === 'appointment' && <Calendar size={20} />}
+                    {activity.type === 'report' && <FileText size={20} />}
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium text-gray-800 dark:text-white">{activity.user}</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{activity.user}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{activity.time}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 transition-transform hover:scale-105 duration-300 animate-fadeIn">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white">Quick Actions</h2>
-              <Shield className="text-purple-500" size={24} />
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Quick Actions</h2>
+              <Shield className="text-purple-600 animate-bounce" size={26} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <QuickActionButton icon={<UserPlus />} label="Add Doctor" color="purple" />
-              <QuickActionButton icon={<Users />} label="Manage Users" color="blue" />
-              <QuickActionButton icon={<Calendar />} label="View Schedule" color="emerald" />
-              <QuickActionButton icon={<FileText />} label="Reports" color="pink" />
+            <div className="grid grid-cols-2 gap-6">
+              <button className="flex flex-col items-center gap-3 py-5 transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-purple-400 rounded-xl">
+                <UserPlus size={26} className="text-purple-600 animate-pulse" />
+                <span className="text-base font-semibold text-gray-700 dark:text-gray-300">Add Doctor</span>
+              </button>
+              <button className="flex flex-col items-center gap-3 py-5 transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-400 rounded-xl">
+                <Users size={26} className="text-blue-600 animate-bounce" />
+                <span className="text-base font-semibold text-gray-700 dark:text-gray-300">Manage Users</span>
+              </button>
+              <button className="flex flex-col items-center gap-3 py-5 transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-emerald-400 rounded-xl">
+                <Calendar size={26} className="text-emerald-600 animate-pulse" />
+                <span className="text-base font-semibold text-gray-700 dark:text-gray-300">View Schedule</span>
+              </button>
+              <button className="flex flex-col items-center gap-3 py-5 transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-pink-400 rounded-xl">
+                <FileText size={26} className="text-pink-600 animate-bounce" />
+                <span className="text-base font-semibold text-gray-700 dark:text-gray-300">Reports</span>
+              </button>
             </div>
           </div>
         </div>
       </div>
     );
   }
-  return <div className="text-center text-gray-500 dark:text-gray-400 mt-20">Content for {activeSection}</div>;
+  return <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">Content for {activeSection}</div>;
 }
 
-function GuardianDashboard({ data, activeSection }: any) {
+function GuardianDashboard({ data, activeSection, dark }: any) {
   if (activeSection === 'overview') {
     return (
-      <div className="space-y-6">
-        {/* Dependents Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {data.dependents.map((dependent: any, idx: number) => (
-            <div key={idx} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 flex items-center justify-center text-white font-bold text-2xl">
-                  {dependent.name.split(' ').map((n: string) => n[0]).join('')}
+      <div className="space-y-10 animate-fadeIn">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {data.dependents.map((dep: any, idx: number) => (
+            <div key={idx} className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 hover:scale-105 transition-transform duration-300 animate-fadeIn">
+              <div className="flex items-center gap-5 mb-6">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-600 flex items-center justify-center text-white font-bold text-3xl animate-bounce shadow-lg">
+                  {dep.name.split(' ').map((n: string) => n[0]).join('')}
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-800 dark:text-white">{dependent.name}</h3>
-                  <p className="text-gray-600 dark:text-gray-300">{dependent.relation} • {dependent.age} years old</p>
+                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-white">{dep.name}</h3>
+                  <p className="text-gray-600 dark:text-gray-400">{dep.relation} • {dep.age} years old</p>
                 </div>
               </div>
-              <div className="space-y-3 mt-6">
-                <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg dark:bg-orange-900">
-                  <span className="text-gray-600 dark:text-orange-200">Last Visit</span>
-                  <span className="font-semibold text-gray-800 dark:text-white">{dependent.lastVisit}</span>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-orange-50 dark:bg-orange-800 rounded-lg animate-fadeIn shadow-sm">
+                  <span className="text-orange-700 dark:text-orange-200 font-semibold">Last Visit</span>
+                  <span className="font-semibold text-gray-900 dark:text-orange-100">{dep.lastVisit}</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg dark:bg-amber-900">
-                  <span className="text-gray-600 dark:text-amber-200">Next Appointment</span>
-                  <span className="font-semibold text-gray-800 dark:text-white">{dependent.nextAppointment}</span>
+                <div className="flex items-center justify-between p-4 bg-amber-50 dark:bg-amber-800 rounded-lg animate-fadeIn shadow-sm">
+                  <span className="text-amber-700 dark:text-amber-200 font-semibold">Next Appointment</span>
+                  <span className="font-semibold text-gray-900 dark:text-amber-100">{dep.nextAppointment}</span>
                 </div>
               </div>
-              <button className="w-full mt-4 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-semibold rounded-xl hover:shadow-lg transition">
+              <button className="w-full mt-6 py-3 bg-gradient-to-r from-orange-500 to-amber-600 text-white font-bold rounded-3xl hover:scale-105 hover:shadow-xl transition-transform animate-fadeIn focus:outline-none focus:ring-4 focus:ring-orange-400">
                 View Full Profile
               </button>
             </div>
           ))}
         </div>
-
-        {/* Alerts */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <AlertCircle className="text-orange-500" size={24} />
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Health Alerts</h2>
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 animate-fadeIn mt-10">
+          <div className="flex items-center gap-4 mb-5">
+            <AlertCircle className="text-orange-600 animate-pulse" size={28} />
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">Health Alerts</h2>
           </div>
-          <div className="p-4 bg-orange-50 rounded-xl border-l-4 border-orange-500 dark:bg-orange-900 dark:border-orange-700">
-            <p className="font-semibold text-gray-800 dark:text-orange-300">Upcoming vaccination for Emma</p>
-            <p className="text-sm text-gray-600 dark:text-orange-200 mt-1">Annual flu shot scheduled for Nov 10, 2025</p>
+          <div className="p-6 bg-orange-50 dark:bg-orange-900 rounded-2xl border-l-8 border-orange-600 dark:border-orange-800 animate-fadeIn shadow-inner">
+            <p className="font-semibold text-gray-900 dark:text-orange-300">Upcoming vaccination for Emma</p>
+            <p className="text-sm text-gray-600 dark:text-orange-200 mt-2">Annual flu shot scheduled for Nov 10, 2025</p>
           </div>
         </div>
       </div>
     );
   }
-  return <div className="text-center text-gray-500 dark:text-gray-400 mt-20">Content for {activeSection}</div>;
+  return <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">Content for {activeSection}</div>;
 }
 
-function StatCard({ icon, label, value, trend, color }: any) {
+function StatCard({ icon, label, value, trend, color, darkMode }: any) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 hover:shadow-xl transition">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`w-12 h-12 rounded-xl bg-gradient-to-r from-${color}-500 to-${color}-600 flex items-center justify-center`}>
+    <div className={`bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6 hover:scale-105 transition-transform duration-300 animate-fadeIn cursor-pointer`}>
+      <div className="flex items-center justify-between mb-5">
+        <div className={`w-14 h-14 rounded-3xl bg-gradient-to-r from-${color}-500 to-${color}-600 flex items-center justify-center shadow-md`}>
           {icon}
         </div>
-        <ChevronRight className="text-gray-400 dark:text-gray-300" size={20} />
+        <ChevronRight className="text-gray-400 dark:text-gray-300" size={22} />
       </div>
-      <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">{label}</h3>
-      <p className="text-3xl font-bold text-gray-800 dark:text-white mb-2">{value}</p>
-      <p className="text-sm text-gray-500 dark:text-gray-400">{trend}</p>
+      <h3 className="text-gray-700 dark:text-gray-300 text-base font-semibold mb-1">{label}</h3>
+      <p className="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">{value}</p>
+      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{trend}</p>
     </div>
   );
 }
 
 function QuickActionButton({ icon, label, color }: any) {
   return (
-    <button className={`p-4 bg-gradient-to-r from-${color}-50 to-${color}-100 dark:from-${color}-900 dark:to-${color}-800 rounded-xl hover:shadow-md transition flex flex-col items-center gap-2`}>
-      <div className={`w-10 h-10 rounded-lg bg-gradient-to-r from-${color}-500 to-${color}-600 flex items-center justify-center text-white`}>
-        {React.cloneElement(icon, { size: 20 })}
+    <button className={`p-5 bg-gradient-to-r from-${color}-50 to-${color}-100 dark:from-${color}-900 dark:to-${color}-800 rounded-3xl hover:scale-105 transition-transform duration-300 flex flex-col items-center gap-3 animate-fadeIn shadow-lg`}>
+      <div className={`w-12 h-12 rounded-lg bg-gradient-to-r from-${color}-500 to-${color}-600 flex items-center justify-center text-white shadow-md`}>
+        {React.cloneElement(icon, { size: 22 })}
       </div>
-      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+      <span className="text-base font-semibold text-gray-700 dark:text-gray-300">{label}</span>
     </button>
   );
 }

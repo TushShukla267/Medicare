@@ -4,6 +4,8 @@ const { Sequelize, DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const http = require('http');
+const { Server: IOServer } = require('socket.io');
 
 const app = express();
 app.use(express.json());
@@ -17,7 +19,8 @@ app.use(cors({
       return callback(new Error('Not allowed by CORS'), false);
     }
     return callback(null, true);
-  }
+  },
+  credentials: true
 }));
 
 // ✅ Database connection
@@ -87,6 +90,11 @@ User.hasOne(Patient, { foreignKey: 'userId' });
 User.hasOne(Doctor, { foreignKey: 'userId' });
 User.hasOne(Admin, { foreignKey: 'userId' });
 User.hasOne(Guardian, { foreignKey: 'userId' });
+
+Patient.belongsTo(User, { foreignKey: 'userId' });
+Doctor.belongsTo(User, { foreignKey: 'userId' });
+Admin.belongsTo(User, { foreignKey: 'userId' });
+Guardian.belongsTo(User, { foreignKey: 'userId' });
 
 // ✅ Helpers
 function validateEmail(email) {
@@ -174,22 +182,29 @@ app.post('/api/auth/register', async (req, res) => {
 });
 
 app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await User.findOne({ where: { email } });
-  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' });
 
-  const valid = await bcrypt.compare(password, user.password_hash);
-  if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+    const valid = await bcrypt.compare(password, user.password_hash);
+    if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
-  const token = generateToken(user);
-  // 👇 Add role in the response
-  res.json({ message: 'Login successful', token, role: user.role });
+    const token = generateToken(user);
+    res.json({ message: 'Login successful', token, role: user.role });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/api/auth/verify', authMiddleware, async (req, res) => {
-  const user = await User.findByPk(req.user.id);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-  res.json({ user, role: user.role });
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ user, role: user.role });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/api/auth/logout', authMiddleware, (req, res) => {
@@ -204,7 +219,194 @@ app.get('/', (req, res) => {
   res.send('API is running!');
 });
 
+// =========================
+// Socket.IO signaling server for WebRTC (integrated)
+// =========================
+const server = http.createServer(app);
+
+const io = new IOServer(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000
+});
+
+// ✅ Enhanced room tracking with persistence timers
+const signalingRooms = {}; // { roomId: [socketId, ...] }
+const roomCleanupTimers = {}; // { roomId: timeoutId }
+
+io.on('connection', (socket) => {
+  console.log('🔌 Socket connected:', socket.id);
+
+  // ✅ Join room event
+  socket.on('join-room', (roomId) => {
+    if (!roomId) {
+      console.log('❌ No roomId provided');
+      return;
+    }
+    
+    console.log(`📥 Socket ${socket.id} joining room: ${roomId}`);
+    
+    // Clear any existing cleanup timer for this room (user reconnecting)
+    if (roomCleanupTimers[roomId]) {
+      console.log(`⏰ Clearing cleanup timer for room ${roomId} (user reconnecting)`);
+      clearTimeout(roomCleanupTimers[roomId]);
+      delete roomCleanupTimers[roomId];
+    }
+    
+    socket.join(roomId);
+    
+    if (!signalingRooms[roomId]) {
+      signalingRooms[roomId] = [];
+    }
+    
+    // Avoid duplicates
+    if (!signalingRooms[roomId].includes(socket.id)) {
+      signalingRooms[roomId].push(socket.id);
+    }
+
+    // Send current users in room (excluding self)
+    const otherUsers = signalingRooms[roomId].filter(id => id !== socket.id);
+    socket.emit('room-users', otherUsers);
+    
+    // Notify others that someone joined (or rejoined)
+    socket.to(roomId).emit('user-joined', socket.id);
+
+    console.log(`✅ Room ${roomId} users:`, signalingRooms[roomId]);
+  });
+
+  // ✅ Handle WebRTC offer
+  socket.on('offer', (data) => {
+    const { to, offer } = data;
+    if (!to) {
+      console.log('❌ No recipient for offer');
+      return;
+    }
+    console.log(`📤 Forwarding offer from ${socket.id} to ${to}`);
+    io.to(to).emit('offer', { offer, from: socket.id });
+  });
+
+  // ✅ Handle WebRTC answer
+  socket.on('answer', (data) => {
+    const { to, answer } = data;
+    if (!to) {
+      console.log('❌ No recipient for answer');
+      return;
+    }
+    console.log(`📤 Forwarding answer from ${socket.id} to ${to}`);
+    io.to(to).emit('answer', { answer, from: socket.id });
+  });
+
+  // ✅ Handle ICE candidate
+  socket.on('ice-candidate', (data) => {
+    const { to, candidate } = data;
+    if (!to) {
+      console.log('❌ No recipient for ICE candidate');
+      return;
+    }
+    console.log(`🧊 Forwarding ICE candidate from ${socket.id} to ${to}`);
+    io.to(to).emit('ice-candidate', { candidate, from: socket.id });
+  });
+
+  // ✅ Handle disconnect with room persistence
+  socket.on('disconnect', () => {
+    console.log('🔌 Socket disconnected:', socket.id);
+    
+    // Remove from all rooms
+    for (const roomId in signalingRooms) {
+      const index = signalingRooms[roomId].indexOf(socket.id);
+      if (index !== -1) {
+        signalingRooms[roomId].splice(index, 1);
+        
+        // Notify others in the room
+        socket.to(roomId).emit('user-disconnected', socket.id);
+        
+        console.log(`👋 Removed ${socket.id} from room ${roomId}`);
+        console.log(`📊 Room ${roomId} now has ${signalingRooms[roomId].length} user(s)`);
+        
+        // If room is empty, start cleanup timer (60 seconds)
+        if (signalingRooms[roomId].length === 0) {
+          console.log(`⏰ Starting 60-second cleanup timer for empty room: ${roomId}`);
+          
+          roomCleanupTimers[roomId] = setTimeout(() => {
+            if (signalingRooms[roomId] && signalingRooms[roomId].length === 0) {
+              console.log(`🗑️ Cleaning up empty room after timeout: ${roomId}`);
+              delete signalingRooms[roomId];
+              delete roomCleanupTimers[roomId];
+            }
+          }, 60000); // 60 seconds
+        }
+      }
+    }
+  });
+
+  // ✅ Handle explicit leave room
+  socket.on('leave-room', (roomId) => {
+    if (signalingRooms[roomId]) {
+      const index = signalingRooms[roomId].indexOf(socket.id);
+      if (index !== -1) {
+        signalingRooms[roomId].splice(index, 1);
+        socket.leave(roomId);
+        socket.to(roomId).emit('user-disconnected', socket.id);
+        console.log(`👋 Socket ${socket.id} left room ${roomId}`);
+        
+        // Start cleanup timer if room is empty
+        if (signalingRooms[roomId].length === 0) {
+          console.log(`⏰ Starting 60-second cleanup timer for room: ${roomId}`);
+          
+          roomCleanupTimers[roomId] = setTimeout(() => {
+            if (signalingRooms[roomId] && signalingRooms[roomId].length === 0) {
+              console.log(`🗑️ Cleaning up empty room: ${roomId}`);
+              delete signalingRooms[roomId];
+              delete roomCleanupTimers[roomId];
+            }
+          }, 60000);
+        }
+      }
+    }
+  });
+
+  // ✅ Error handling
+  socket.on('error', (error) => {
+    console.error('❌ Socket error:', error);
+  });
+});
+
 // ✅ Sync DB & start server
+const PORT = process.env.PORT || 5000;
+
 sequelize.sync({ alter: true }).then(() => {
-  app.listen(5000, () => console.log('Server running on port 5000'));
+  server.listen(PORT, () => {
+    console.log('='.repeat(50));
+    console.log(`✅ Server running on port ${PORT}`);
+    console.log(`✅ API available at http://localhost:${PORT}`);
+    console.log(`✅ Socket.IO signaling server ready`);
+    console.log(`✅ Room persistence: 60 seconds after last user leaves`);
+    console.log(`✅ Allowed origins: ${allowedOrigins.join(', ')}`);
+    console.log('='.repeat(50));
+  });
+}).catch(err => {
+  console.error('❌ Database sync failed:', err);
+  process.exit(1);
+});
+
+// ✅ Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('👋 SIGTERM signal received: closing HTTP server');
+  
+  // Clear all cleanup timers
+  for (const roomId in roomCleanupTimers) {
+    clearTimeout(roomCleanupTimers[roomId]);
+  }
+  
+  server.close(() => {
+    console.log('✅ HTTP server closed');
+    sequelize.close().then(() => {
+      console.log('✅ Database connection closed');
+      process.exit(0);
+    });
+  });
 });
