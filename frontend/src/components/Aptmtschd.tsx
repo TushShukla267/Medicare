@@ -1,23 +1,19 @@
 import React, { useState } from "react";
 
-
 const doctors = [
   { id: 1, name: "Dr. Sarah Johnson", specialty: "Cardiology" },
   { id: 2, name: "Dr. Michael Chen", specialty: "General Practice" },
 ];
 
-
 const availableTimes = [
   "09:00 AM", "10:00 AM", "11:00 AM", "02:00 PM", "03:00 PM", "04:00 PM"
 ];
-
 
 export default function AppointmentScheduler({ onBook }: { onBook?: (data: any) => void }) {
   const [doctor, setDoctor] = useState<{ id: number, name: string, specialty: string } | null>(null);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [error, setError] = useState("");
-
 
   const resetForm = () => {
     setDoctor(null);
@@ -26,28 +22,58 @@ export default function AppointmentScheduler({ onBook }: { onBook?: (data: any) 
     setError("");
   };
 
-
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!doctor || !date || !time) {
       setError("Please select doctor, date, and time.");
       return;
     }
-    onBook && onBook({ doctor, date, time });
-    alert("Appointment successfully scheduled!");
-    resetForm();
+
+    // Prepare appointment data for backend
+    const appointmentData = {
+      doctorId: doctor.id,
+      appointmentDate: date,
+      appointmentTime: time
+    };
+
+    try {
+      const response = await fetch("http://localhost:5000/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(appointmentData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        onBook && onBook({ doctor, date, time });
+        alert("Appointment successfully scheduled!");
+        resetForm();
+      } else {
+        setError(result.error || "Failed to schedule appointment");
+      }
+    } catch (err) {
+      setError("Network error, please try again.");
+    }
   }
 
-
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md mx-auto space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Schedule an Appointment</h2>
-      
+    <form 
+      onSubmit={handleSubmit}
+      className="bg-white dark:bg-[#232c3b] rounded-2xl shadow-xl p-8 w-full max-w-md mx-auto space-y-6 transition-colors duration-300"
+    >
+      <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+        Schedule an Appointment
+      </h2>
       <div className="mb-4">
-        <label className="block text-gray-700 font-semibold mb-1">Choose Doctor</label>
-        <select className="w-full border rounded-lg py-2 px-3"
+        <label className="block text-gray-700 dark:text-gray-200 font-semibold mb-1">
+          Choose Doctor
+        </label>
+        <select
+          className="w-full border border-gray-300 dark:border-gray-700 rounded-lg py-2 px-3 bg-white dark:bg-[#232c3b] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-300"
           value={doctor?.id || ""}
-          onChange={e => setDoctor(doctors.find(d => d.id === Number(e.target.value)) || null)}>
+          onChange={e => setDoctor(doctors.find(d => d.id === Number(e.target.value)) || null)}
+        >
           <option value="">Select a doctor</option>
           {doctors.map(doc => (
             <option key={doc.id} value={doc.id}>
@@ -56,35 +82,34 @@ export default function AppointmentScheduler({ onBook }: { onBook?: (data: any) 
           ))}
         </select>
       </div>
-      
       <div className="mb-4">
-        <label className="block text-gray-700 font-semibold mb-1">Date</label>
+        <label className="block text-gray-700 dark:text-gray-200 font-semibold mb-1">
+          Date
+        </label>
         <input
           type="date"
-          className="w-full border rounded-lg py-2 px-3"
+          className="w-full border border-gray-300 dark:border-gray-700 rounded-lg py-2 px-3 bg-white dark:bg-[#232c3b] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-300"
           value={date}
           onChange={e => setDate(e.target.value)}
           min={new Date().toISOString().split('T')[0]}
         />
       </div>
-
-
       <div className="mb-4">
-        <label className="block text-gray-700 font-semibold mb-1">Time Slot</label>
-        <select className="w-full border rounded-lg py-2 px-3"
+        <label className="block text-gray-700 dark:text-gray-200 font-semibold mb-1">
+          Time Slot
+        </label>
+        <select
+          className="w-full border border-gray-300 dark:border-gray-700 rounded-lg py-2 px-3 bg-white dark:bg-[#232c3b] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-300"
           value={time}
-          onChange={e => setTime(e.target.value)}>
+          onChange={e => setTime(e.target.value)}
+        >
           <option value="">Select time slot</option>
           {availableTimes.map(t => (
             <option key={t}>{t}</option>
           ))}
         </select>
       </div>
-
-
-      {error && <p className="text-red-600">{error}</p>}
-
-
+      {error && <p className="text-red-600 dark:text-red-400">{error}</p>}
       <button
         type="submit"
         className="w-full py-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg text-white font-bold hover:shadow-lg transition"

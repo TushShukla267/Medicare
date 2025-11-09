@@ -10,7 +10,7 @@ const { Server: IOServer } = require('socket.io');
 const app = express();
 app.use(express.json());
 
-// ✅ Allow both CRA (3000) and Vite (5173)
+// Allow both CRA (3000) and Vite (5173)
 const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173'];
 app.use(cors({
   origin: function (origin, callback) {
@@ -23,10 +23,16 @@ app.use(cors({
   credentials: true
 }));
 
-// ✅ Database connection
-const sequelize = new Sequelize(process.env.DATABASE_URL);
+// Database connection
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialectOptions: {
+    ssl: process.env.DATABASE_SSL === "true" ? { require: true, rejectUnauthorized: false } : false
+  }
+});
 
-// ✅ User Model
+// =====================
+// Model Definitions
+// =====================
 const User = sequelize.define('User', {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   email: { type: DataTypes.STRING, unique: true, allowNull: false },
@@ -35,7 +41,6 @@ const User = sequelize.define('User', {
   is_active: { type: DataTypes.BOOLEAN, defaultValue: true }
 });
 
-// ✅ Patient
 const Patient = sequelize.define('Patient', {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   userId: { type: DataTypes.INTEGER, allowNull: false, unique: true },
@@ -49,7 +54,6 @@ const Patient = sequelize.define('Patient', {
   medical_history: DataTypes.TEXT
 });
 
-// ✅ Doctor
 const Doctor = sequelize.define('Doctor', {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   userId: { type: DataTypes.INTEGER, allowNull: false, unique: true },
@@ -63,7 +67,6 @@ const Doctor = sequelize.define('Doctor', {
   is_verified: { type: DataTypes.BOOLEAN, defaultValue: false }
 });
 
-// ✅ Admin
 const Admin = sequelize.define('Admin', {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   userId: { type: DataTypes.INTEGER, allowNull: false, unique: true },
@@ -75,7 +78,6 @@ const Admin = sequelize.define('Admin', {
   access_level: { type: DataTypes.ENUM('super_admin', 'admin', 'moderator'), defaultValue: 'admin' }
 });
 
-// ✅ Guardian
 const Guardian = sequelize.define('Guardian', {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   userId: { type: DataTypes.INTEGER, allowNull: false, unique: true },
@@ -85,18 +87,40 @@ const Guardian = sequelize.define('Guardian', {
   relationship_type: DataTypes.STRING
 });
 
-// ✅ Relations
+// Appointment Model (with SQL field mapping)
+const Appointment = sequelize.define('Appointment', {
+  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+  doctorId: { type: DataTypes.INTEGER, allowNull: false, field: 'doctor_id' },
+  appointmentDate: { type: DataTypes.DATEONLY, allowNull: false, field: 'appointment_date' },
+  appointmentTime: { type: DataTypes.STRING, allowNull: false, field: 'appointment_time' },
+  createdAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, field: 'created_at' },
+  status: {
+    type: DataTypes.ENUM('pending', 'confirmed', 'cancelled', 'completed'),
+    defaultValue: 'pending'
+  },
+  notes: { type: DataTypes.TEXT }
+}, {
+  tableName: 'appointments',
+  timestamps: false
+});
+
+// =====================
+// Associations
+// =====================
 User.hasOne(Patient, { foreignKey: 'userId' });
 User.hasOne(Doctor, { foreignKey: 'userId' });
 User.hasOne(Admin, { foreignKey: 'userId' });
 User.hasOne(Guardian, { foreignKey: 'userId' });
-
 Patient.belongsTo(User, { foreignKey: 'userId' });
 Doctor.belongsTo(User, { foreignKey: 'userId' });
 Admin.belongsTo(User, { foreignKey: 'userId' });
 Guardian.belongsTo(User, { foreignKey: 'userId' });
+Doctor.hasMany(Appointment, { foreignKey: 'doctorId' });
+Appointment.belongsTo(Doctor, { foreignKey: 'doctorId' });
 
-// ✅ Helpers
+// =====================
+// Helper Functions
+// =====================
 function validateEmail(email) {
   return /^[^@]+@[^@]+\.[^@]+$/.test(email);
 }
@@ -104,10 +128,25 @@ function validatePassword(password) {
   return password.length >= 8 && /[A-Z]/.test(password) && /[a-z]/.test(password) && /\d/.test(password);
 }
 function generateToken(user) {
-  return jwt.sign({ id: user.id, role: user.role, email: user.email }, process.env.JWT_SECRET || 'jwtsecret', { expiresIn: '24h' });
+  return jwt.sign(
+    { id: user.id, role: user.role, email: user.email },
+    process.env.JWT_SECRET || 'jwtsecret',
+    { expiresIn: '24h' }
+  );
+}
+// Time conversion: "11:00 AM" --> "11:00:00"
+function convertToSqlTime(timeStr) {
+  const [hour, minutePart] = timeStr.split(':');
+  let [minute, period] = minutePart.split(' ');
+  let h = parseInt(hour, 10);
+  if (period === 'PM' && h < 12) h += 12;
+  if (period === 'AM' && h === 12) h = 0;
+  return `${h.toString().padStart(2, '0')}:${minute}:00`;
 }
 
-// ✅ Middleware
+// =====================
+// Middleware
+// =====================
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
@@ -118,20 +157,22 @@ function authMiddleware(req, res, next) {
   });
 }
 
-// ✅ Routes
+// =====================
+// Routes
+// =====================
+
+// Registration, login, verify, logout...
+// (leave your current logic for auth etc here, unchanged)
+
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password, role, first_name, last_name } = req.body;
-
     if (!validateEmail(email)) return res.status(400).json({ error: 'Invalid email' });
     if (!validatePassword(password)) return res.status(400).json({ error: 'Weak password' });
-
     const existing = await User.findOne({ where: { email } });
     if (existing) return res.status(400).json({ error: 'User already exists' });
-
     const hash = await bcrypt.hash(password, 10);
     const user = await User.create({ email, password_hash: hash, role });
-
     if (role === 'patient') {
       await Patient.create({
         userId: user.id,
@@ -174,29 +215,24 @@ app.post('/api/auth/register', async (req, res) => {
         relationship_type: req.body.relationship_type || null
       });
     }
-
     res.status(201).json({ message: 'Registration successful', user });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ where: { email } });
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
-
     const token = generateToken(user);
     res.json({ message: 'Login successful', token, role: user.role });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
 app.get('/api/auth/verify', authMiddleware, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id);
@@ -206,7 +242,6 @@ app.get('/api/auth/verify', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 app.post('/api/auth/logout', authMiddleware, (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
@@ -214,16 +249,94 @@ app.post('/api/auth/logout', authMiddleware, (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy', timestamp: new Date().toISOString() });
 });
-
 app.get('/', (req, res) => {
   res.send('API is running!');
 });
 
-// =========================
-// Socket.IO signaling server for WebRTC (integrated)
-// =========================
-const server = http.createServer(app);
+// Appointment booking endpoint (time-string conversion)
+app.post('/api/appointments', async (req, res) => {
+  try {
+    const { doctorId, appointmentDate, appointmentTime } = req.body;
+    if (!doctorId || !appointmentDate || !appointmentTime) {
+      return res.status(400).json({ error: 'Missing fields' });
+    }
+    // Convert e.g. "11:00 AM" -> "11:00:00" before save
+    const formattedTime = convertToSqlTime(appointmentTime);
+    const appointment = await Appointment.create({
+      doctorId,
+      appointmentDate,
+      appointmentTime: formattedTime
+    });
+    res.status(201).json({ message: 'Appointment created', appointment });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
+// ========== ADDED BELOW THIS LINE ==========
+// GET appointments for a doctor
+app.get('/api/appointments', async (req, res) => {
+  try {
+    const { doctorId } = req.query;
+    if (!doctorId) return res.status(400).json({ error: 'doctorId is required' });
+    const appointments = await Appointment.findAll({ where: { doctorId } });
+    res.json(appointments);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update appointment status (accept/reject)
+app.post('/api/appointments/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const valid = ['pending', 'confirmed', 'cancelled', 'completed'];
+    if (!valid.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+
+    const appointment = await Appointment.findByPk(id);
+    if (!appointment) return res.status(404).json({ error: 'Appointment not found' });
+
+    appointment.status = status;
+    await appointment.save();
+    res.json({ message: 'Appointment status updated', status: appointment.status });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ------ ADMIN APPOINTMENT LOG ENDPOINT ------
+app.get('/api/appointments/all', async (req, res) => {
+  try {
+    const appointments = await Appointment.findAll({
+      include: [
+        {
+          model: Doctor,
+          attributes: ['first_name', 'last_name'],
+        }
+      ]
+    });
+    const logs = appointments.map(app => ({
+      id: app.id,
+      patientName: app.patientName || '-', // To show actual patient name, also include Patient and User joins
+      doctorName: app.Doctor ? `${app.Doctor.first_name} ${app.Doctor.last_name}` : `#${app.doctorId}`,
+      doctorId: app.doctorId,
+      appointmentDate: app.appointmentDate,
+      appointmentTime: app.appointmentTime,
+      status: app.status
+    }));
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+// ------ END ADMIN LOG ENDPOINT ------
+
+
+// =====================
+// Socket.IO Signaling Server for WebRTC
+// =====================
+const server = http.createServer(app);
 const io = new IOServer(server, {
   cors: {
     origin: allowedOrigins,
@@ -233,133 +346,43 @@ const io = new IOServer(server, {
   pingTimeout: 60000,
   pingInterval: 25000
 });
-
-// ✅ Enhanced room tracking with persistence timers
-const signalingRooms = {}; // { roomId: [socketId, ...] }
-const roomCleanupTimers = {}; // { roomId: timeoutId }
-
+const signalingRooms = {};
+const roomCleanupTimers = {};
 io.on('connection', (socket) => {
   console.log('🔌 Socket connected:', socket.id);
-
-  // ✅ Join room event
   socket.on('join-room', (roomId) => {
-    if (!roomId) {
-      console.log('❌ No roomId provided');
-      return;
-    }
-    
+    if (!roomId) return;
     console.log(`📥 Socket ${socket.id} joining room: ${roomId}`);
-    
-    // Clear any existing cleanup timer for this room (user reconnecting)
     if (roomCleanupTimers[roomId]) {
-      console.log(`⏰ Clearing cleanup timer for room ${roomId} (user reconnecting)`);
       clearTimeout(roomCleanupTimers[roomId]);
       delete roomCleanupTimers[roomId];
     }
-    
     socket.join(roomId);
-    
-    if (!signalingRooms[roomId]) {
-      signalingRooms[roomId] = [];
-    }
-    
-    // Avoid duplicates
-    if (!signalingRooms[roomId].includes(socket.id)) {
+    if (!signalingRooms[roomId]) signalingRooms[roomId] = [];
+    if (!signalingRooms[roomId].includes(socket.id))
       signalingRooms[roomId].push(socket.id);
-    }
-
-    // Send current users in room (excluding self)
     const otherUsers = signalingRooms[roomId].filter(id => id !== socket.id);
     socket.emit('room-users', otherUsers);
-    
-    // Notify others that someone joined (or rejoined)
     socket.to(roomId).emit('user-joined', socket.id);
-
-    console.log(`✅ Room ${roomId} users:`, signalingRooms[roomId]);
   });
-
-  // ✅ Handle WebRTC offer
-  socket.on('offer', (data) => {
-    const { to, offer } = data;
-    if (!to) {
-      console.log('❌ No recipient for offer');
-      return;
-    }
-    console.log(`📤 Forwarding offer from ${socket.id} to ${to}`);
-    io.to(to).emit('offer', { offer, from: socket.id });
+  socket.on('offer', ({ to, offer }) => {
+    if (to) io.to(to).emit('offer', { offer, from: socket.id });
   });
-
-  // ✅ Handle WebRTC answer
-  socket.on('answer', (data) => {
-    const { to, answer } = data;
-    if (!to) {
-      console.log('❌ No recipient for answer');
-      return;
-    }
-    console.log(`📤 Forwarding answer from ${socket.id} to ${to}`);
-    io.to(to).emit('answer', { answer, from: socket.id });
+  socket.on('answer', ({ to, answer }) => {
+    if (to) io.to(to).emit('answer', { answer, from: socket.id });
   });
-
-  // ✅ Handle ICE candidate
-  socket.on('ice-candidate', (data) => {
-    const { to, candidate } = data;
-    if (!to) {
-      console.log('❌ No recipient for ICE candidate');
-      return;
-    }
-    console.log(`🧊 Forwarding ICE candidate from ${socket.id} to ${to}`);
-    io.to(to).emit('ice-candidate', { candidate, from: socket.id });
+  socket.on('ice-candidate', ({ to, candidate }) => {
+    if (to) io.to(to).emit('ice-candidate', { candidate, from: socket.id });
   });
-
-  // ✅ Handle disconnect with room persistence
   socket.on('disconnect', () => {
-    console.log('🔌 Socket disconnected:', socket.id);
-    
-    // Remove from all rooms
     for (const roomId in signalingRooms) {
       const index = signalingRooms[roomId].indexOf(socket.id);
       if (index !== -1) {
         signalingRooms[roomId].splice(index, 1);
-        
-        // Notify others in the room
         socket.to(roomId).emit('user-disconnected', socket.id);
-        
-        console.log(`👋 Removed ${socket.id} from room ${roomId}`);
-        console.log(`📊 Room ${roomId} now has ${signalingRooms[roomId].length} user(s)`);
-        
-        // If room is empty, start cleanup timer (60 seconds)
         if (signalingRooms[roomId].length === 0) {
-          console.log(`⏰ Starting 60-second cleanup timer for empty room: ${roomId}`);
-          
           roomCleanupTimers[roomId] = setTimeout(() => {
             if (signalingRooms[roomId] && signalingRooms[roomId].length === 0) {
-              console.log(`🗑️ Cleaning up empty room after timeout: ${roomId}`);
-              delete signalingRooms[roomId];
-              delete roomCleanupTimers[roomId];
-            }
-          }, 60000); // 60 seconds
-        }
-      }
-    }
-  });
-
-  // ✅ Handle explicit leave room
-  socket.on('leave-room', (roomId) => {
-    if (signalingRooms[roomId]) {
-      const index = signalingRooms[roomId].indexOf(socket.id);
-      if (index !== -1) {
-        signalingRooms[roomId].splice(index, 1);
-        socket.leave(roomId);
-        socket.to(roomId).emit('user-disconnected', socket.id);
-        console.log(`👋 Socket ${socket.id} left room ${roomId}`);
-        
-        // Start cleanup timer if room is empty
-        if (signalingRooms[roomId].length === 0) {
-          console.log(`⏰ Starting 60-second cleanup timer for room: ${roomId}`);
-          
-          roomCleanupTimers[roomId] = setTimeout(() => {
-            if (signalingRooms[roomId] && signalingRooms[roomId].length === 0) {
-              console.log(`🗑️ Cleaning up empty room: ${roomId}`);
               delete signalingRooms[roomId];
               delete roomCleanupTimers[roomId];
             }
@@ -368,16 +391,12 @@ io.on('connection', (socket) => {
       }
     }
   });
-
-  // ✅ Error handling
-  socket.on('error', (error) => {
-    console.error('❌ Socket error:', error);
-  });
 });
 
-// ✅ Sync DB & start server
+// =====================
+// Sync DB & Start Server
+// =====================
 const PORT = process.env.PORT || 5000;
-
 sequelize.sync({ alter: true }).then(() => {
   server.listen(PORT, () => {
     console.log('='.repeat(50));
@@ -393,17 +412,15 @@ sequelize.sync({ alter: true }).then(() => {
   process.exit(1);
 });
 
-// ✅ Graceful shutdown
+// =====================
+// Graceful Shutdown
+// =====================
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM signal received: closing HTTP server');
-  
-  // Clear all cleanup timers
   for (const roomId in roomCleanupTimers) {
     clearTimeout(roomCleanupTimers[roomId]);
   }
-  
   server.close(() => {
-    console.log('✅ HTTP server closed');
     sequelize.close().then(() => {
       console.log('✅ Database connection closed');
       process.exit(0);

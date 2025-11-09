@@ -6,8 +6,11 @@ import {
 } from 'lucide-react';
 import { Telemedicine } from './Telemedicine';
 import AppointmentScheduler from './Aptmtschd';
+import AppointmentReceiver from './Aptmtrcvr';
 import { NavItem } from '../UI/dashboard/NavItem';
 import { useNavigate } from 'react-router-dom';
+import { PatientPortal } from './Medications';
+import  ApmtLog  from './Aptmtlog';
 
 type Role = 'patient' | 'doctor' | 'admin' | 'guardian' | null;
 
@@ -105,8 +108,8 @@ export default function HealthcareDashboard({ userRole }: UnifiedDashboardProps)
       transition-colors duration-700 z-50 font-sans`}>
 
       {/* Sidebar */}
-      <aside className={`fixed left-0 top-0 h-full ${darkMode ? 'bg-gray-900' : 'bg-white'} 
-        shadow-2xl transition-all duration-400 z-40 flex flex-col 
+      <aside className={`fixed left-0 top-0 h-full ${darkMode ? 'bg-gray-900' : 'bg-white'}
+        shadow-2xl transition-all duration-400 z-40 flex flex-col
         ${sidebarOpen ? 'w-64' : 'w-20'} animate-slide-in`}>
         <div className="p-6 flex flex-col justify-between h-full">
           <div>
@@ -148,8 +151,8 @@ export default function HealthcareDashboard({ userRole }: UnifiedDashboardProps)
                 <>
                   <NavItem icon={<Activity />} label="Overview" active={activeSection === 'overview'}
                     onClick={() => setActiveSection('overview')} compact={!sidebarOpen} />
-                  <NavItem icon={<Calendar />} label="Schedule" active={activeSection === 'schedule'}
-                    onClick={() => setActiveSection('schedule')} compact={!sidebarOpen} />
+                  <NavItem icon={<Calendar />} label="Schedule" active={activeSection === 'appointments'}
+                    onClick={() => setActiveSection('appointments')} compact={!sidebarOpen} />
                   <NavItem icon={<Users />} label="Patients" active={activeSection === 'patients'}
                     onClick={() => setActiveSection('patients')} compact={!sidebarOpen} />
                   <NavItem icon={<FileText />} label="Reports" active={activeSection === 'reports'}
@@ -197,6 +200,7 @@ export default function HealthcareDashboard({ userRole }: UnifiedDashboardProps)
           </div>
         </div>
       </aside>
+
       <main className={`transition-all duration-500 ${sidebarOpen ? 'ml-64' : 'ml-20'} p-8 animate-fadeIn min-h-screen`}>
         <header className="mb-10 flex items-center justify-between animate-fadeIn">
           <div>
@@ -223,32 +227,54 @@ export default function HealthcareDashboard({ userRole }: UnifiedDashboardProps)
             >
               {darkMode ? "Light Mode" : "Dark Mode"}
             </button>
-            <div className={`w-14 h-14 rounded-3xl bg-gradient-to-r ${roleColors[userRole]} 
+            <div className={`w-14 h-14 rounded-3xl bg-gradient-to-r ${roleColors[userRole]}
               flex items-center justify-center text-white font-bold text-xl shadow-lg`}>
               {getRoleData()?.name.split(' ').map((n: string) => n[0]).join('')}
             </div>
           </div>
         </header>
+
         {userRole === 'patient' && (
           activeSection === 'telemedicine' ? (
             <Telemedicine userRole={userRole} />
+          ) : activeSection === 'appointments' ? (
+            <AppointmentScheduler onBook={(details: any) => {
+              console.log('Booked appointment:', details);
+            }} />
+          ) : activeSection === 'medications' ? (
+            <PatientPortal />
           ) : (
             <PatientDashboard data={patientData} activeSection={activeSection} dark={darkMode} />
           )
         )}
+
         {userRole === 'doctor' && (
           activeSection === 'telemedicine' ? (
             <Telemedicine userRole={userRole} />
+          ) : activeSection === 'appointments' ? (
+            <AppointmentReceiver doctorId={1} />
           ) : (
             <DoctorDashboard data={doctorData} activeSection={activeSection} dark={darkMode} />
           )
         )}
+
         {userRole === 'admin' && (
-          <AdminDashboard data={adminData} activeSection={activeSection} dark={darkMode} />
+          activeSection === 'appointments' ? (
+            <AppointmentScheduler onBook={(details: any) => {
+              console.log('Booked appointment:', details);
+            }} />
+          ) : (
+            <AdminDashboard data={adminData} activeSection={activeSection} dark={darkMode} />
+          )
         )}
+
         {userRole === 'guardian' && (
           activeSection === 'telemedicine' ? (
             <Telemedicine userRole={userRole} />
+          ) : activeSection === 'appointments' ? (
+            <AppointmentScheduler onBook={(details: any) => {
+              console.log('Booked appointment:', details);
+            }} />
           ) : (
             <GuardianDashboard data={guardianData} activeSection={activeSection} dark={darkMode} />
           )
@@ -316,15 +342,13 @@ function PatientDashboard({ data, activeSection, dark }: any) {
       </div>
     );
   }
-  if (activeSection === 'appointments') {
-    return (
-      <div className="max-w-3xl mx-auto py-16 animate-fadeIn">
-        <AppointmentScheduler onBook={(details: any) => {
-          console.log('Booked appointment:', details);
-        }} />
-      </div>
-    );
-  }
+if (activeSection === 'appointments') {
+  return (
+    <div className="max-w-5xl mx-auto py-16 animate-fadeIn">
+      <ApmtLog />
+    </div>
+  );
+}
   return <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">Content for {activeSection}</div>;
 }
 
@@ -370,6 +394,13 @@ function DoctorDashboard({ data, activeSection, dark }: any) {
             ))}
           </div>
         </div>
+      </div>
+    );
+  }
+  if (activeSection === 'appointments') {
+    return (
+      <div className="max-w-3xl mx-auto py-16 animate-fadeIn">
+        <AppointmentReceiver doctorId={data.id} />
       </div>
     );
   }
@@ -433,6 +464,14 @@ function AdminDashboard({ data, activeSection, dark }: any) {
             </div>
           </div>
         </div>
+        {/* Add appointment log section to overview if wanted */}
+      </div>
+    );
+  }
+  if (activeSection === 'appointments') {
+    return (
+      <div className="max-w-5xl mx-auto py-16 animate-fadeIn">
+        <ApmtLog />
       </div>
     );
   }
@@ -484,6 +523,15 @@ function GuardianDashboard({ data, activeSection, dark }: any) {
       </div>
     );
   }
+  if (activeSection === 'appointments') {
+    return (
+      <div className="max-w-3xl mx-auto py-16 animate-fadeIn">
+        <AppointmentScheduler onBook={(details: any) => {
+          console.log('Booked appointment:', details);
+        }} />
+      </div>
+    );
+  }
   return <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">Content for {activeSection}</div>;
 }
 
@@ -506,7 +554,7 @@ function StatCard({ icon, label, value, trend, color, darkMode }: any) {
 function QuickActionButton({ icon, label, color }: any) {
   return (
     <button className={`p-5 bg-gradient-to-r from-${color}-50 to-${color}-100 dark:from-${color}-900 dark:to-${color}-800 rounded-3xl hover:scale-105 transition-transform duration-300 flex flex-col items-center gap-3 animate-fadeIn shadow-lg`}>
-      <div className={`w-12 h-12 rounded-lg bg-gradient-to-r from-${color}-500 to-${color}-600 flex items-center justify-center text-white shadow-md`}>
+      <div className={`w-12 h-12 rounded-lg bg-gradient-to-r from-${color}-500 to-${color}-600 dark:from-${color}-700 dark:to-${color}-800 flex items-center justify-center text-white shadow-md`}>
         {React.cloneElement(icon, { size: 22 })}
       </div>
       <span className="text-base font-semibold text-gray-700 dark:text-gray-300">{label}</span>

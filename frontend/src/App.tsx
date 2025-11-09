@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from "react-router-dom";
-import  Dashboard   from './components/Dashboard';
-import { VitalSigns } from './components/VitalSigns';
-import { FallDetection } from './components/FallDetection';
+import  Dashboard   from './components/Dashboard';
 import { Telemedicine } from './components/Telemedicine';
 import { Analytics } from './components/Analytics';
-import { EmergencyAlert } from './components/EmergencyAlert';
-import { PatientPortal } from './components/PatientPortal';
-import { DoctorPortal } from './components/DoctorPortal';
+import { PatientPortal } from './components/Medications';
+import ApmtLog from './components/Aptmtlog';
 
 export type UserRole = 'patient' | 'doctor' | 'admin' | 'guardian';
 export type NavigationItem = 'dashboard' | 'vitals' | 'fall-detection' | 'telemedicine' | 'analytics' | 'patient-portal' | 'doctor-portal';
@@ -51,30 +48,22 @@ function App() {
     switch (activeNav) {
       case 'dashboard':
         return <Dashboard userRole={userRole} />;
-      case 'vitals':
-        return <VitalSigns />;
-      case 'fall-detection':
-        return <FallDetection />;
       case 'telemedicine':
         return <Telemedicine userRole={userRole} />;
       case 'analytics':
         return <Analytics />;
       case 'patient-portal':
         return <PatientPortal />;
-      case 'doctor-portal':
-        return <DoctorPortal />;
-      // no default hardcoding!
+      default:
+        if (userRole === 'admin') {
+          return <ApmtLog />;
+        }
+        return null;
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {emergencyAlert && (
-        <EmergencyAlert
-          alert={emergencyAlert}
-          onDismiss={() => setEmergencyAlert(null)}
-        />
-      )}
       <main className="flex-1 p-6 ml-64">
         {renderActiveComponent()}
       </main>
