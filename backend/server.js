@@ -14,7 +14,7 @@ app.use(express.json());
 const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173'];
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // allow curl/postman
+    if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) === -1) {
       return callback(new Error('Not allowed by CORS'), false);
     }
@@ -23,7 +23,9 @@ app.use(cors({
   credentials: true
 }));
 
+// =====================
 // Database connection
+// =====================
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialectOptions: {
     ssl: process.env.DATABASE_SSL === "true" ? { require: true, rejectUnauthorized: false } : false
@@ -87,10 +89,10 @@ const Guardian = sequelize.define('Guardian', {
   relationship_type: DataTypes.STRING
 });
 
-// Appointment Model (with SQL field mapping)
 const Appointment = sequelize.define('Appointment', {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   doctorId: { type: DataTypes.INTEGER, allowNull: false, field: 'doctor_id' },
+  patientId: { type: DataTypes.INTEGER, allowNull: true, field: 'patient_id' },
   appointmentDate: { type: DataTypes.DATEONLY, allowNull: false, field: 'appointment_date' },
   appointmentTime: { type: DataTypes.STRING, allowNull: false, field: 'appointment_time' },
   createdAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, field: 'created_at' },
@@ -115,8 +117,11 @@ Patient.belongsTo(User, { foreignKey: 'userId' });
 Doctor.belongsTo(User, { foreignKey: 'userId' });
 Admin.belongsTo(User, { foreignKey: 'userId' });
 Guardian.belongsTo(User, { foreignKey: 'userId' });
+
 Doctor.hasMany(Appointment, { foreignKey: 'doctorId' });
+Patient.hasMany(Appointment, { foreignKey: 'patientId' });
 Appointment.belongsTo(Doctor, { foreignKey: 'doctorId' });
+Appointment.belongsTo(Patient, { foreignKey: 'patientId' });
 
 // =====================
 // Helper Functions
@@ -134,7 +139,6 @@ function generateToken(user) {
     { expiresIn: '24h' }
   );
 }
-// Time conversion: "11:00 AM" --> "11:00:00"
 function convertToSqlTime(timeStr) {
   const [hour, minutePart] = timeStr.split(':');
   let [minute, period] = minutePart.split(' ');
@@ -144,9 +148,6 @@ function convertToSqlTime(timeStr) {
   return `${h.toString().padStart(2, '0')}:${minute}:00`;
 }
 
-// =====================
-// Middleware
-// =====================
 function authMiddleware(req, res, next) {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'Unauthorized' });
@@ -160,9 +161,6 @@ function authMiddleware(req, res, next) {
 // =====================
 // Routes
 // =====================
-
-// Registration, login, verify, logout...
-// (leave your current logic for auth etc here, unchanged)
 
 app.post('/api/auth/register', async (req, res) => {
   try {
@@ -253,17 +251,16 @@ app.get('/', (req, res) => {
   res.send('API is running!');
 });
 
-// Appointment booking endpoint (time-string conversion)
 app.post('/api/appointments', async (req, res) => {
   try {
-    const { doctorId, appointmentDate, appointmentTime } = req.body;
+    const { doctorId, patientId, appointmentDate, appointmentTime } = req.body;
     if (!doctorId || !appointmentDate || !appointmentTime) {
       return res.status(400).json({ error: 'Missing fields' });
     }
-    // Convert e.g. "11:00 AM" -> "11:00:00" before save
     const formattedTime = convertToSqlTime(appointmentTime);
     const appointment = await Appointment.create({
       doctorId,
+      patientId: patientId || null,
       appointmentDate,
       appointmentTime: formattedTime
     });
@@ -273,8 +270,6 @@ app.post('/api/appointments', async (req, res) => {
   }
 });
 
-// ========== ADDED BELOW THIS LINE ==========
-// GET appointments for a doctor
 app.get('/api/appointments', async (req, res) => {
   try {
     const { doctorId } = req.query;
@@ -286,52 +281,36 @@ app.get('/api/appointments', async (req, res) => {
   }
 });
 
-// Update appointment status (accept/reject)
-app.post('/api/appointments/:id/status', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-    const valid = ['pending', 'confirmed', 'cancelled', 'completed'];
-    if (!valid.includes(status)) return res.status(400).json({ error: 'Invalid status' });
-
-    const appointment = await Appointment.findByPk(id);
-    if (!appointment) return res.status(404).json({ error: 'Appointment not found' });
-
-    appointment.status = status;
-    await appointment.save();
-    res.json({ message: 'Appointment status updated', status: appointment.status });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ------ ADMIN APPOINTMENT LOG ENDPOINT ------
 app.get('/api/appointments/all', async (req, res) => {
   try {
     const appointments = await Appointment.findAll({
       include: [
         {
           model: Doctor,
-          attributes: ['first_name', 'last_name'],
+          attributes: ['first_name', 'last_name']
+        },
+        {
+          model: Patient,
+          attributes: ['first_name', 'last_name']
         }
       ]
     });
+
     const logs = appointments.map(app => ({
       id: app.id,
-      patientName: app.patientName || '-', // To show actual patient name, also include Patient and User joins
+      patientName: app.Patient ? `${app.Patient.first_name} ${app.Patient.last_name}` : '-',
       doctorName: app.Doctor ? `${app.Doctor.first_name} ${app.Doctor.last_name}` : `#${app.doctorId}`,
       doctorId: app.doctorId,
       appointmentDate: app.appointmentDate,
       appointmentTime: app.appointmentTime,
       status: app.status
     }));
+
     res.json(logs);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-// ------ END ADMIN LOG ENDPOINT ------
-
 
 // =====================
 // Socket.IO Signaling Server for WebRTC

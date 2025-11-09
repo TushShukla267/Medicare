@@ -11,6 +11,8 @@ import { NavItem } from '../UI/dashboard/NavItem';
 import { useNavigate } from 'react-router-dom';
 import { PatientPortal } from './Medications';
 import  ApmtLog  from './Aptmtlog';
+import { Analytics } from './Analytics';
+import VideoStream, { VideoMode } from './VideoMode';
 
 type Role = 'patient' | 'doctor' | 'admin' | 'guardian' | null;
 
@@ -141,8 +143,8 @@ export default function HealthcareDashboard({ userRole }: UnifiedDashboardProps)
                     onClick={() => setActiveSection('appointments')} compact={!sidebarOpen} />
                   <NavItem icon={<Pill />} label="Medications" active={activeSection === 'medications'}
                     onClick={() => setActiveSection('medications')} compact={!sidebarOpen} />
-                  <NavItem icon={<FileText />} label="Records" active={activeSection === 'records'}
-                    onClick={() => setActiveSection('records')} compact={!sidebarOpen} />
+                  <NavItem icon={<FileText />} label="Reports" active={activeSection === 'reports'}
+                    onClick={() => setActiveSection('reports')} compact={!sidebarOpen} />
                   <NavItem icon={<Video />} label="Telemedicine" active={activeSection === 'telemedicine'}
                     onClick={() => setActiveSection('telemedicine')} compact={!sidebarOpen} />
                 </>
@@ -253,16 +255,18 @@ export default function HealthcareDashboard({ userRole }: UnifiedDashboardProps)
             <Telemedicine userRole={userRole} />
           ) : activeSection === 'appointments' ? (
             <AppointmentReceiver doctorId={1} />
+          ) : activeSection === 'reports' ? (
+            <ReportsSection dark={darkMode} />
           ) : (
             <DoctorDashboard data={doctorData} activeSection={activeSection} dark={darkMode} />
           )
         )}
 
         {userRole === 'admin' && (
-          activeSection === 'appointments' ? (
-            <AppointmentScheduler onBook={(details: any) => {
-              console.log('Booked appointment:', details);
-            }} />
+          activeSection === 'analytics' ? (
+            <Analytics />
+          ) : activeSection === 'appointments' ? (
+            <ApmtLog />
           ) : (
             <AdminDashboard data={adminData} activeSection={activeSection} dark={darkMode} />
           )
@@ -355,13 +359,42 @@ if (activeSection === 'appointments') {
 function DoctorDashboard({ data, activeSection, dark }: any) {
   if (activeSection === 'overview') {
     return (
-      <div className="space-y-10 animate-fadeIn">
+      <div className="space-y-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
-          <StatCard icon={<Users className="text-emerald-500 animate-bounce" />} label="Today's Patients" value={data.stats.todayPatients} trend="+3 from yesterday" color="emerald" darkMode={dark} />
-          <StatCard icon={<FileText className="text-blue-500 animate-pulse" />} label="Pending Reports" value={data.stats.pendingReports} trend="2 urgent" color="blue" darkMode={dark} />
-          <StatCard icon={<Users className="text-purple-500 animate-bounce" />} label="Total Patients" value={data.stats.totalPatients} trend="+12 this month" color="purple" darkMode={dark} />
-          <StatCard icon={<TrendingUp className="text-yellow-500 animate-pulse" />} label="Rating" value={`${data.stats.rating}/5.0`} trend="Excellent" color="yellow" darkMode={dark} />
+          <StatCard
+            icon={<Users className="text-emerald-500 animate-bounce" />}
+            label="Today's Patients"
+            value={data.stats.todayPatients}
+            trend="+3 from yesterday"
+            color="emerald"
+            darkMode={dark}
+          />
+          <StatCard
+            icon={<FileText className="text-blue-500 animate-pulse" />}
+            label="Pending Reports"
+            value={data.stats.pendingReports}
+            trend="2 urgent"
+            color="blue"
+            darkMode={dark}
+          />
+          <StatCard
+            icon={<Users className="text-purple-500 animate-bounce" />}
+            label="Total Patients"
+            value={data.stats.totalPatients}
+            trend="+12 this month"
+            color="purple"
+            darkMode={dark}
+          />
+          <StatCard
+            icon={<TrendingUp className="text-yellow-500 animate-pulse" />}
+            label="Rating"
+            value={`${data.stats.rating}/5.0`}
+            trend="Excellent"
+            color="yellow"
+            darkMode={dark}
+          />
         </div>
+
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 transition-transform hover:scale-105 duration-300 animate-fadeIn">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Today's Schedule</h2>
@@ -369,27 +402,34 @@ function DoctorDashboard({ data, activeSection, dark }: any) {
           </div>
           <div className="space-y-5">
             {data.appointments.map((apt: any) => (
-              <div key={apt.id} className={`flex items-center gap-6 p-5 rounded-2xl border transition-shadow hover:shadow-lg animate-fadeIn ${
-                apt.status === 'upcoming'
-                  ? 'bg-accent/60 border-success/30 shadow-success/40'
-                  : 'bg-muted/30 border-border'
-              }`}>
-                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-md ${
+              <div
+                key={apt.id}
+                className={`flex items-center gap-6 p-5 rounded-2xl border transition-shadow hover:shadow-lg animate-fadeIn ${
                   apt.status === 'upcoming'
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600'
-                    : 'bg-gray-500/40'
-                }`}>
+                    ? 'bg-accent/60 border-success/30 shadow-success/40'
+                    : 'bg-muted/30 border-border'
+                }`}
+              >
+                <div
+                  className={`w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-md ${
+                    apt.status === 'upcoming'
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600'
+                      : 'bg-gray-500/40'
+                  }`}
+                >
                   {apt.time.split(':')[0]}:{apt.time.split(':')[1].split(' ')[0]}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 dark:text-white">{apt.patient}</h3>
                   <p className="text-sm text-gray-500 dark:text-gray-300">{apt.condition}</p>
                 </div>
-                <span className={`px-5 py-2 rounded-full text-sm font-semibold ${
-                  apt.status === 'upcoming'
-                    ? 'bg-success/30 text-success'
-                    : 'bg-gray-300 text-gray-600'
-                }`}>{apt.status}</span>
+                <span
+                  className={`px-5 py-2 rounded-full text-sm font-semibold ${
+                    apt.status === 'upcoming' ? 'bg-success/30 text-success' : 'bg-gray-300 text-gray-600'
+                  }`}
+                >
+                  {apt.status}
+                </span>
               </div>
             ))}
           </div>
@@ -397,6 +437,7 @@ function DoctorDashboard({ data, activeSection, dark }: any) {
       </div>
     );
   }
+
   if (activeSection === 'appointments') {
     return (
       <div className="max-w-3xl mx-auto py-16 animate-fadeIn">
@@ -404,6 +445,7 @@ function DoctorDashboard({ data, activeSection, dark }: any) {
       </div>
     );
   }
+
   return <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">Content for {activeSection}</div>;
 }
 
@@ -533,6 +575,105 @@ function GuardianDashboard({ data, activeSection, dark }: any) {
     );
   }
   return <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">Content for {activeSection}</div>;
+}
+
+function ReportsSection({ dark }: { dark: boolean }) {
+  const [streamUrl, setStreamUrl] = useState('ws://localhost:8080/stream');
+  const [streamMode, setStreamMode] = useState<'mjpeg' | 'ws'>('ws');
+
+
+  return (
+    <div className="space-y-8">
+      <div className={`${dark ? 'bg-gray-800' : 'bg-white'} rounded-3xl shadow-xl p-8`}>
+        <h2 className="text-3xl font-bold mb-6 text-gray-900 dark:text-white">
+          Medical Imaging & Reports
+        </h2>
+        <p className="text-gray-600 dark:text-gray-300 mb-8">
+          View live medical imaging streams and patient monitoring data
+        </p>
+
+
+        {/* Stream Configuration */}
+        <div className="mb-6 space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              Stream URL
+            </label>
+            <input
+              type="text"
+              value={streamUrl}
+              onChange={(e) => setStreamUrl(e.target.value)}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
+              placeholder="Enter stream URL"
+            />
+          </div>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setStreamMode('ws')}
+              className={`px-6 py-2 rounded-lg font-semibold transition ${
+                streamMode === 'ws'
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+              }`}
+            >
+              WebSocket Mode
+            </button>
+            <button
+              onClick={() => setStreamMode('mjpeg')}
+              className={`px-6 py-2 rounded-lg font-semibold transition ${
+                streamMode === 'mjpeg'
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+              }`}
+            >
+              MJPEG Mode
+            </button>
+          </div>
+        </div>
+
+
+        {/* Video Stream */}
+        <VideoStream
+          src={streamUrl}
+          mode={streamMode}
+          onStatusChange={(status) => console.log('Stream status:', status)}
+        />
+
+
+        {/* Additional Info */}
+        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">
+            Configuration Instructions:
+          </h3>
+          <ul className="text-sm text-blue-800 dark:text-blue-400 space-y-1">
+            <li>• WebSocket mode: Use ws:// or wss:// protocol</li>
+            <li>• MJPEG mode: Use http:// or https:// protocol</li>
+            <li>• Ensure your backend streaming service is running</li>
+            <li>• Check firewall settings if connection fails</li>
+          </ul>
+        </div>
+      </div>
+
+
+      {/* Sample Reports Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className={`${dark ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6`}>
+          <div className="flex items-center gap-3 mb-4">
+            <FileText className="text-emerald-500" size={24} />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Lab Reports</h3>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400">Recent patient lab results and analysis</p>
+        </div>
+        <div className={`${dark ? 'bg-gray-800' : 'bg-white'} rounded-2xl shadow-lg p-6`}>
+          <div className="flex items-center gap-3 mb-4">
+            <Activity className="text-blue-500" size={24} />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Vitals History</h3>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400">Patient vital signs monitoring data</p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function StatCard({ icon, label, value, trend, color, darkMode }: any) {
