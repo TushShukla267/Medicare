@@ -13,6 +13,8 @@ import { PatientPortal } from './Medications';
 import  ApmtLog  from './Aptmtlog';
 import { Analytics } from './Analytics';
 import VideoStream, { VideoMode } from './VideoMode';
+import { doctorPatients } from './PatientsBar';
+import { doctorList } from './DoctorsBar';
 
 type Role = 'patient' | 'doctor' | 'admin' | 'guardian' | null;
 
@@ -258,7 +260,11 @@ export default function HealthcareDashboard({ userRole }: UnifiedDashboardProps)
           ) : activeSection === 'reports' ? (
             <ReportsSection dark={darkMode} />
           ) : (
-            <DoctorDashboard data={doctorData} activeSection={activeSection} dark={darkMode} />
+            <DoctorDashboard
+              data={{ ...doctorData, patients: doctorPatients }}
+              activeSection={activeSection}
+              dark={darkMode}
+            />
           )
         )}
 
@@ -268,9 +274,15 @@ export default function HealthcareDashboard({ userRole }: UnifiedDashboardProps)
           ) : activeSection === 'appointments' ? (
             <ApmtLog />
           ) : (
-            <AdminDashboard data={adminData} activeSection={activeSection} dark={darkMode} />
+            <AdminDashboard
+              data={{ ...adminData, patients: doctorPatients, doctors: doctorList }}
+              activeSection={activeSection}
+              dark={darkMode}
+            />
           )
         )}
+
+
 
         {userRole === 'guardian' && (
           activeSection === 'telemedicine' ? (
@@ -584,19 +596,50 @@ function AdminDashboard({ data, activeSection, dark }: any) {
     return (
       <div className="space-y-10 animate-fadeIn">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
-          <StatCard icon={<Stethoscope className="text-purple-500 animate-bounce" />} label="Total Doctors" value={data.stats.totalDoctors} trend="+2 this week" color="purple" darkMode={dark} />
-          <StatCard icon={<Users className="text-blue-500 animate-bounce" />} label="Total Patients" value={data.stats.totalPatients} trend="+45 this month" color="blue" darkMode={dark} />
-          <StatCard icon={<Calendar className="text-emerald-500 animate-pulse" />} label="Appointments" value={data.stats.appointments} trend="Today" color="emerald" darkMode={dark} />
-          <StatCard icon={<TrendingUp className="text-pink-500 animate-bounce" />} label="Revenue" value={`$${(data.stats.revenue / 1000).toFixed(1)}k`} trend="+8.2% vs last month" color="pink" darkMode={dark} />
+          <StatCard
+            icon={<Stethoscope className="text-purple-500 animate-bounce" />}
+            label="Total Doctors"
+            value={data.doctors?.length || 0}
+            trend="+2 this week"
+            color="purple"
+            darkMode={dark}
+          />
+          <StatCard
+            icon={<Users className="text-blue-500 animate-bounce" />}
+            label="Total Patients"
+            value={data.patients?.length || 0}
+            trend="+45 this month"
+            color="blue"
+            darkMode={dark}
+          />
+          <StatCard
+            icon={<Calendar className="text-emerald-500 animate-pulse" />}
+            label="Appointments"
+            value={data.stats?.appointments || 0}
+            trend="Today"
+            color="emerald"
+            darkMode={dark}
+          />
+          <StatCard
+            icon={<TrendingUp className="text-pink-500 animate-bounce" />}
+            label="Revenue"
+            value={`$${(data.stats?.revenue / 1000 || 0).toFixed(1)}k`}
+            trend="+8.2% vs last month"
+            color="pink"
+            darkMode={dark}
+          />
         </div>
+
+        {/* Rest of overview section remains the same */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Recent Activity card - unchanged */}
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 transition-transform hover:scale-105 duration-300 animate-fadeIn">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Recent Activity</h2>
               <Activity className="text-purple-600 animate-pulse" size={26} />
             </div>
             <div className="space-y-6">
-              {data.recentActivity.map((activity: any, idx: number) => (
+              {data.recentActivity?.map((activity: any, idx: number) => (
                 <div key={idx} className="flex items-center gap-5 p-4 bg-accent/60 rounded-2xl border border-border animate-fadeIn shadow-md hover:shadow-lg transition-shadow">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex items-center justify-center text-white animate-bounce shadow-lg">
                     {activity.type === 'registration' && <UserPlus size={20} />}
@@ -608,38 +651,154 @@ function AdminDashboard({ data, activeSection, dark }: any) {
                     <p className="text-sm text-gray-500 dark:text-gray-400">{activity.time}</p>
                   </div>
                 </div>
-              ))}
+              )) || <p className="text-gray-500 dark:text-gray-400">No recent activity</p>}
             </div>
           </div>
+
+          {/* Quick Actions card - unchanged */}
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 transition-transform hover:scale-105 duration-300 animate-fadeIn">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Quick Actions</h2>
               <Shield className="text-purple-600 animate-bounce" size={26} />
             </div>
             <div className="grid grid-cols-2 gap-6">
-              <button className="flex flex-col items-center gap-3 py-5 transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-purple-400 rounded-xl">
+              <button className="flex flex-col items-center gap-3 py-5 transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-purple-400 rounded-xl bg-purple-50 dark:bg-purple-900/30 hover:bg-purple-100 dark:hover:bg-purple-900/50 p-4 rounded-2xl">
                 <UserPlus size={26} className="text-purple-600 animate-pulse" />
                 <span className="text-base font-semibold text-gray-700 dark:text-gray-300">Add Doctor</span>
               </button>
-              <button className="flex flex-col items-center gap-3 py-5 transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-400 rounded-xl">
+              <button className="flex flex-col items-center gap-3 py-5 transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-blue-400 rounded-xl bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 p-4 rounded-2xl">
                 <Users size={26} className="text-blue-600 animate-bounce" />
                 <span className="text-base font-semibold text-gray-700 dark:text-gray-300">Manage Users</span>
               </button>
-              <button className="flex flex-col items-center gap-3 py-5 transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-emerald-400 rounded-xl">
+              <button className="flex flex-col items-center gap-3 py-5 transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-emerald-400 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 p-4 rounded-2xl">
                 <Calendar size={26} className="text-emerald-600 animate-pulse" />
                 <span className="text-base font-semibold text-gray-700 dark:text-gray-300">View Schedule</span>
               </button>
-              <button className="flex flex-col items-center gap-3 py-5 transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-pink-400 rounded-xl">
+              <button className="flex flex-col items-center gap-3 py-5 transition-transform hover:scale-110 focus:outline-none focus:ring-4 focus:ring-pink-400 rounded-xl bg-pink-50 dark:bg-pink-900/30 hover:bg-pink-100 dark:hover:bg-pink-900/50 p-4 rounded-2xl">
                 <FileText size={26} className="text-pink-600 animate-bounce" />
                 <span className="text-base font-semibold text-gray-700 dark:text-gray-300">Reports</span>
               </button>
             </div>
           </div>
         </div>
-        {/* Add appointment log section to overview if wanted */}
       </div>
     );
   }
+
+  // Patients table - unchanged (activeSection === 'users')
+  if (activeSection === 'users') {
+    return (
+      <div className="space-y-8 animate-fadeIn">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Patients</h2>
+        <p className="text-gray-600 dark:text-gray-300 mb-4">All registered patients in the system.</p>
+        <div className={`${dark ? 'bg-gray-800' : 'bg-white'} rounded-3xl shadow-xl p-6`}>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  <th className="py-3 pr-4">Patient</th>
+                  <th className="py-3 pr-4">Condition</th>
+                  <th className="py-3 pr-4">Last visit</th>
+                  <th className="py-3 pr-4">Next appointment</th>
+                  <th className="py-3 pr-4">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {data.patients?.map((p: any) => (
+                  <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition">
+                    <td className="py-3 pr-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 text-white flex items-center justify-center text-xs font-semibold">
+                          {p.name?.split(' ').map((n: string) => n[0]).join('')}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900 dark:text-white text-sm">{p.name}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{p.age} yrs • {p.gender}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 pr-4 text-sm text-gray-700 dark:text-gray-300">{p.condition}</td>
+                    <td className="py-3 pr-4 text-sm text-gray-600 dark:text-gray-400">{p.lastVisit}</td>
+                    <td className="py-3 pr-4 text-sm text-gray-600 dark:text-gray-400">{p.nextAppointment}</td>
+                    <td className="py-3 pr-4">
+                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                        p.status === 'High priority' || p.status === 'Critical'
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                          : p.status === 'Follow-up' || p.status === 'Scheduled' || p.status === 'upcoming'
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                          : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                      }`}>
+                        {p.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // NEW: Doctors table for activeSection === 'doctors'
+  if (activeSection === 'doctors') {
+    return (
+      <div className="space-y-8 animate-fadeIn">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Doctors</h2>
+        <p className="text-gray-600 dark:text-gray-300 mb-4">All registered doctors in the system.</p>
+        <div className={`${dark ? 'bg-gray-800' : 'bg-white'} rounded-3xl shadow-xl p-6`}>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  <th className="py-3 pr-4">Doctor</th>
+                  <th className="py-3 pr-4">Specialty</th>
+                  <th className="py-3 pr-4">Experience</th>
+                  <th className="py-3 pr-4">Hospital</th>
+                  <th className="py-3 pr-4">Availability</th>
+                  <th className="py-3 pr-4">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {data.doctors?.map((d: any) => (
+                  <tr key={d.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition">
+                    <td className="py-3 pr-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-r from-emerald-500 to-blue-600 text-white flex items-center justify-center text-xs font-semibold">
+                          Dr. {d.name?.split(' ').map((n: string) => n[0]).join('')}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900 dark:text-white text-sm">{d.name}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{d.experience} yrs • {d.gender}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 pr-4 text-sm text-gray-700 dark:text-gray-300 font-medium">{d.specialty}</td>
+                    <td className="py-3 pr-4 text-sm text-gray-700 dark:text-gray-300">{d.experience} years</td>
+                    <td className="py-3 pr-4 text-sm text-gray-600 dark:text-gray-400">{d.hospital}</td>
+                    <td className="py-3 pr-4 text-sm text-gray-600 dark:text-gray-400">{d.availability}</td>
+                    <td className="py-3 pr-4">
+                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                        d.status === 'Booked' || d.status === 'High Demand'
+                          ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300'
+                          : d.status === 'Available' || d.status === 'upcoming'
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                          : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                      }`}>
+                        {d.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (activeSection === 'appointments') {
     return (
       <div className="max-w-5xl mx-auto py-16 animate-fadeIn">
@@ -647,7 +806,12 @@ function AdminDashboard({ data, activeSection, dark }: any) {
       </div>
     );
   }
-  return <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">Content for {activeSection}</div>;
+
+  return (
+    <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">
+      Content for {activeSection}
+    </div>
+  );
 }
 
 function GuardianDashboard({ data, activeSection, dark }: any) {
@@ -711,7 +875,6 @@ function ReportsSection({ dark }: { dark: boolean }) {
   const [streamUrl, setStreamUrl] = useState('ws://localhost:8080/stream');
   const [streamMode, setStreamMode] = useState<'mjpeg' | 'ws'>('ws');
 
-
   return (
     <div className="space-y-8">
       <div className={`${dark ? 'bg-gray-800' : 'bg-white'} rounded-3xl shadow-xl p-8`}>
@@ -761,14 +924,12 @@ function ReportsSection({ dark }: { dark: boolean }) {
           </div>
         </div>
 
-
         {/* Video Stream */}
         <VideoStream
           src={streamUrl}
           mode={streamMode}
           onStatusChange={(status) => console.log('Stream status:', status)}
         />
-
 
         {/* Additional Info */}
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -783,7 +944,6 @@ function ReportsSection({ dark }: { dark: boolean }) {
           </ul>
         </div>
       </div>
-
 
       {/* Sample Reports Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

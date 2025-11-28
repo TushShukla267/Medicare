@@ -1,4 +1,6 @@
-const doctorPatients = [
+// PatientBar.tsx
+
+export const doctorPatients = [
   {
     id: 'P-1001',
     name: 'Emily Carter',
@@ -79,7 +81,6 @@ const doctorPatients = [
     nextAppointment: '2025-12-05 03:00 PM',
     status: 'High priority',
   },
-  // below are your earlier mock patients, kept as requested
   {
     id: 'P-2001',
     name: 'John Doe',
