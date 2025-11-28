@@ -10,7 +10,9 @@ const { Server: IOServer } = require('socket.io');
 const app = express();
 app.use(express.json());
 
-// Allow both CRA (3000) and Vite (5173)
+// =====================================
+// ✅ CORS Configuration
+// =====================================
 const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173'];
 app.use(cors({
   origin: function (origin, callback) {
@@ -23,18 +25,18 @@ app.use(cors({
   credentials: true
 }));
 
-// =====================
-// Database connection
-// =====================
+// =====================================
+// ✅ Database Setup
+// =====================================
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialectOptions: {
     ssl: process.env.DATABASE_SSL === "true" ? { require: true, rejectUnauthorized: false } : false
   }
 });
 
-// =====================
-// Model Definitions
-// =====================
+// =====================================
+// ✅ Model Definitions
+// =====================================
 const User = sequelize.define('User', {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   email: { type: DataTypes.STRING, unique: true, allowNull: false },
@@ -106,13 +108,14 @@ const Appointment = sequelize.define('Appointment', {
   timestamps: false
 });
 
-// =====================
-// Associations
-// =====================
+// =====================================
+// ✅ Model Associations
+// =====================================
 User.hasOne(Patient, { foreignKey: 'userId' });
 User.hasOne(Doctor, { foreignKey: 'userId' });
 User.hasOne(Admin, { foreignKey: 'userId' });
 User.hasOne(Guardian, { foreignKey: 'userId' });
+
 Patient.belongsTo(User, { foreignKey: 'userId' });
 Doctor.belongsTo(User, { foreignKey: 'userId' });
 Admin.belongsTo(User, { foreignKey: 'userId' });
@@ -123,9 +126,9 @@ Patient.hasMany(Appointment, { foreignKey: 'patientId' });
 Appointment.belongsTo(Doctor, { foreignKey: 'doctorId' });
 Appointment.belongsTo(Patient, { foreignKey: 'patientId' });
 
-// =====================
-// Helper Functions
-// =====================
+// =====================================
+// ✅ Helper Functions
+// =====================================
 function validateEmail(email) {
   return /^[^@]+@[^@]+\.[^@]+$/.test(email);
 }
@@ -158,10 +161,11 @@ function authMiddleware(req, res, next) {
   });
 }
 
-// =====================
-// Routes
-// =====================
+// =====================================
+// ✅ Routes
+// =====================================
 
+// -------- AUTH ROUTES --------
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password, role, first_name, last_name } = req.body;
@@ -218,6 +222,7 @@ app.post('/api/auth/register', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -231,6 +236,7 @@ app.post('/api/auth/login', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 app.get('/api/auth/verify', authMiddleware, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id);
@@ -240,17 +246,12 @@ app.get('/api/auth/verify', authMiddleware, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 app.post('/api/auth/logout', authMiddleware, (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
-});
-app.get('/', (req, res) => {
-  res.send('API is running!');
-});
-
+// -------- APPOINTMENT ROUTES --------
 app.post('/api/appointments', async (req, res) => {
   try {
     const { doctorId, patientId, appointmentDate, appointmentTime } = req.body;
@@ -285,17 +286,10 @@ app.get('/api/appointments/all', async (req, res) => {
   try {
     const appointments = await Appointment.findAll({
       include: [
-        {
-          model: Doctor,
-          attributes: ['first_name', 'last_name']
-        },
-        {
-          model: Patient,
-          attributes: ['first_name', 'last_name']
-        }
+        { model: Doctor, attributes: ['first_name', 'last_name'] },
+        { model: Patient, attributes: ['first_name', 'last_name'] }
       ]
     });
-
     const logs = appointments.map(app => ({
       id: app.id,
       patientName: app.Patient ? `${app.Patient.first_name} ${app.Patient.last_name}` : '-',
@@ -305,16 +299,42 @@ app.get('/api/appointments/all', async (req, res) => {
       appointmentTime: app.appointmentTime,
       status: app.status
     }));
-
     res.json(logs);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// =====================
-// Socket.IO Signaling Server for WebRTC
-// =====================
+// ✅ NEW FIXED ROUTE: Update Appointment Status
+app.put('/api/appointments/:id/status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!['pending', 'confirmed', 'cancelled', 'completed'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status value' });
+    }
+    const appointment = await Appointment.findByPk(id);
+    if (!appointment) return res.status(404).json({ error: 'Appointment not found' });
+    appointment.status = status;
+    await appointment.save();
+    res.json({ message: 'Status updated successfully', appointment });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// -------- HEALTH CHECK --------
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+});
+
+app.get('/', (req, res) => {
+  res.send('API is running!');
+});
+
+// =====================================
+// ✅ Socket.IO Server for WebRTC
+// =====================================
 const server = http.createServer(app);
 const io = new IOServer(server, {
   cors: {
@@ -325,8 +345,10 @@ const io = new IOServer(server, {
   pingTimeout: 60000,
   pingInterval: 25000
 });
+
 const signalingRooms = {};
 const roomCleanupTimers = {};
+
 io.on('connection', (socket) => {
   console.log('🔌 Socket connected:', socket.id);
   socket.on('join-room', (roomId) => {
@@ -372,9 +394,9 @@ io.on('connection', (socket) => {
   });
 });
 
-// =====================
-// Sync DB & Start Server
-// =====================
+// =====================================
+// ✅ Sync Database & Start Server
+// =====================================
 const PORT = process.env.PORT || 5000;
 sequelize.sync({ alter: true }).then(() => {
   server.listen(PORT, () => {
@@ -391,9 +413,9 @@ sequelize.sync({ alter: true }).then(() => {
   process.exit(1);
 });
 
-// =====================
-// Graceful Shutdown
-// =====================
+// =====================================
+// ✅ Graceful Shutdown
+// =====================================
 process.on('SIGTERM', () => {
   console.log('👋 SIGTERM signal received: closing HTTP server');
   for (const roomId in roomCleanupTimers) {

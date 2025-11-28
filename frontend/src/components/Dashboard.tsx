@@ -292,52 +292,100 @@ function PatientDashboard({ data, activeSection, dark }: any) {
   if (activeSection === 'overview') {
     return (
       <div className="space-y-10 animate-fadeIn">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
-          <StatCard icon={<Heart className="text-red-500 animate-heartbeat" />} label="Heart Rate" value={`${data.vitals.heartRate} bpm`} trend="Normal" color="red" darkMode={dark} />
-          <StatCard icon={<Activity className="text-blue-500 animate-bounce" />} label="Blood Pressure" value={data.vitals.bloodPressure} trend="Optimal range" color="blue" darkMode={dark} />
-          <StatCard icon={<Thermometer className="text-orange-500 animate-pulse" />} label="Temperature" value={`${data.vitals.temperature}°F`} trend="Normal body temp" color="orange" darkMode={dark} />
-          <StatCard icon={<Activity className="text-green-500 animate-bounce" />} label="Oxygen Level" value={`${data.vitals.oxygen}%`} trend="Healthy oxygen" color="green" darkMode={dark} />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <StatCard
+            icon={<Heart className="text-red-500 animate-heartbeat" />}
+            label="Heart Rate"
+            value={`${data.vitals.heartRate} bpm`}
+            trend="Normal"
+            color="red"
+            darkMode={dark}
+          />
+          <StatCard
+            icon={<Thermometer className="text-orange-500 animate-pulse" />}
+            label="Temperature"
+            value={`${data.vitals.temperature}°F`}
+            trend="Normal body temp"
+            color="orange"
+            darkMode={dark}
+          />
+          <StatCard
+            icon={<Activity className="text-blue-500 animate-bounce" />}
+            label="Acceleration"
+            value={`${data.vitals.acceleration ?? 0} m/s²`}
+            trend="Motion sensor"
+            color="blue"
+            darkMode={dark}
+          />
         </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 transition-transform hover:scale-105 duration-300 animate-fadeIn">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Upcoming Appointments</h2>
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
+                Upcoming Appointments
+              </h2>
               <Calendar className="text-blue-600" size={26} />
             </div>
             <div className="space-y-6">
-              {data.appointments.filter((a: any) => a.status === 'upcoming').map((apt: any) => (
-                <div key={apt.id} className="flex items-center gap-5 p-5 bg-accent/60 rounded-2xl border border-border transition-shadow hover:shadow-lg animate-fadeIn">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-lg animate-bounce shadow-md shadow-cyan-400/70">
-                    {apt.doctor.split(' ')[1][0]}
+              {data.appointments
+                .filter((a: any) => a.status === 'upcoming')
+                .map((apt: any) => (
+                  <div
+                    key={apt.id}
+                    className="flex items-center gap-5 p-5 bg-accent/60 rounded-2xl border border-border transition-shadow hover:shadow-lg animate-fadeIn"
+                  >
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-600 flex items-center justify-center text-white font-bold text-lg animate-bounce shadow-md shadow-cyan-400/70">
+                      {apt.doctor.split(' ')[1][0]}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                        {apt.doctor}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-300">
+                        {apt.specialty}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {apt.date}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {apt.time}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">{apt.doctor}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-300">{apt.specialty}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-gray-900 dark:text-white">{apt.date}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{apt.time}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
+
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-8 transition-transform hover:scale-105 duration-300 animate-fadeIn">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">Current Medications</h2>
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
+                Current Medications
+              </h2>
               <Pill className="text-purple-600 animate-pulse" size={26} />
             </div>
             <div className="space-y-6">
               {data.medications.map((med: any, idx: number) => (
-                <div key={idx} className="p-5 bg-accent/50 rounded-2xl border border-border transition-shadow hover:shadow-lg animate-fadeIn">
+                <div
+                  key={idx}
+                  className="p-5 bg-accent/50 rounded-2xl border border-border transition-shadow hover:shadow-lg animate-fadeIn"
+                >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900 dark:text-white">{med.name}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                      {med.name}
+                    </h3>
                     <span className="px-4 py-1 bg-purple-200 text-purple-800 rounded-full text-sm font-semibold dark:bg-purple-800 dark:text-purple-200">
                       {med.dosage}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{med.frequency}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Prescribed by {med.prescribed}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {med.frequency}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Prescribed by {med.prescribed}
+                  </p>
                 </div>
               ))}
             </div>
@@ -346,14 +394,20 @@ function PatientDashboard({ data, activeSection, dark }: any) {
       </div>
     );
   }
-if (activeSection === 'appointments') {
+
+  if (activeSection === 'appointments') {
+    return (
+      <div className="max-w-5xl mx-auto py-16 animate-fadeIn">
+        <ApmtLog />
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-5xl mx-auto py-16 animate-fadeIn">
-      <ApmtLog />
+    <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">
+      Content for {activeSection}
     </div>
   );
-}
-  return <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">Content for {activeSection}</div>;
 }
 
 function DoctorDashboard({ data, activeSection, dark }: any) {
@@ -446,7 +500,83 @@ function DoctorDashboard({ data, activeSection, dark }: any) {
     );
   }
 
-  return <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">Content for {activeSection}</div>;
+  if (activeSection === 'patients') {
+    return (
+      <div className="space-y-8 animate-fadeIn">
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          Patients
+        </h2>
+        <p className="text-gray-600 dark:text-gray-300 mb-4">
+          Quick view of your active, follow-up, and high-priority patients.
+        </p>
+
+        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl p-6">
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  <th className="py-3 pr-4">Patient</th>
+                  <th className="py-3 pr-4">Condition</th>
+                  <th className="py-3 pr-4">Last visit</th>
+                  <th className="py-3 pr-4">Next appointment</th>
+                  <th className="py-3 pr-4">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {data.patients?.map((p: any) => (
+                  <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-gray-900/40 transition">
+                    <td className="py-3 pr-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xs font-semibold">
+                          {p.name.split(' ').map((n: string) => n[0]).join('')}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900 dark:text-white text-sm">
+                            {p.name}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {p.age} yrs • {p.gender}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 pr-4 text-sm text-gray-700 dark:text-gray-300">
+                      {p.condition}
+                    </td>
+                    <td className="py-3 pr-4 text-sm text-gray-600 dark:text-gray-400">
+                      {p.lastVisit}
+                    </td>
+                    <td className="py-3 pr-4 text-sm text-gray-600 dark:text-gray-400">
+                      {p.nextAppointment}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <span
+                        className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                          p.status === 'High priority' || p.status === 'Critical'
+                            ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+                            : p.status === 'Follow-up' || p.status === 'Scheduled' || p.status === 'upcoming'
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                            : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        {p.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-center text-gray-500 dark:text-gray-400 mt-24 animate-fadeIn">
+      Content for {activeSection}
+    </div>
+  );
 }
 
 function AdminDashboard({ data, activeSection, dark }: any) {

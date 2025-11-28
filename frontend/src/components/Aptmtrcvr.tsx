@@ -6,8 +6,7 @@ type Appointment = {
   doctorId: number;
   appointmentDate: string;
   appointmentTime: string;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
-  // add other fields as necessary
+  status?: 'pending' | 'confirmed' | 'cancelled' | 'completed'; // optional to avoid undefined errors
 };
 
 export default function AppointmentReceiver({ doctorId }: { doctorId: number }) {
@@ -36,7 +35,7 @@ export default function AppointmentReceiver({ doctorId }: { doctorId: number }) 
   async function handleResponse(appointmentId: number, action: 'accept' | 'reject') {
     try {
       const response = await fetch(`http://localhost:5000/api/appointments/${appointmentId}/status`, {
-        method: 'POST',
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           status: action === 'accept' ? 'confirmed' : 'cancelled'
@@ -57,14 +56,20 @@ export default function AppointmentReceiver({ doctorId }: { doctorId: number }) 
 
   return (
     <div className="max-w-2xl mx-auto animate-fadeIn py-8">
-      <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-8 text-center">Appointments for Doctor</h2>
+      <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-8 text-center">
+        Appointments for Doctor
+      </h2>
+
       {error && (
         <p className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg border border-red-300 dark:bg-red-900 dark:text-red-400 text-center">
           {error}
         </p>
       )}
+
       {appointments.length === 0 ? (
-        <p className="text-center text-gray-600 dark:text-gray-400 py-16 text-base">No appointments found.</p>
+        <p className="text-center text-gray-600 dark:text-gray-400 py-16 text-base">
+          No appointments found.
+        </p>
       ) : (
         <ul className="space-y-6">
           {appointments.map(app => (
@@ -104,9 +109,13 @@ export default function AppointmentReceiver({ doctorId }: { doctorId: number }) 
                       : 'bg-gray-300 dark:bg-gray-700 text-gray-700'
                   }`}
                 >
-                  Status: {app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                  Status:{' '}
+                  {app.status
+                    ? app.status.charAt(0).toUpperCase() + app.status.slice(1)
+                    : 'Unknown'}
                 </p>
               </div>
+
               {app.status === 'pending' && (
                 <div className="flex gap-3 mt-5 md:mt-0">
                   <button
